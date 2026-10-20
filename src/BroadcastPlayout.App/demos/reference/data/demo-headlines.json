@@ -1,0 +1,8 @@
+{
+  "items": [
+    {"headline":"Breaking sequence demo · first JSON item","strap":"Frames 56–167 play from start to end, then data advances"},
+    {"headline":"Second JSON item · sequence restarts","strap":"The same frame range is synchronized to this item"},
+    {"headline":"Third JSON item · independent binding","strap":"Text and PNG sequence share the same item clock"},
+    {"headline":"Fourth JSON item · broadcast loop","strap":"End frame can hold or the sequence can loop by layer setting"}
+  ]
+}

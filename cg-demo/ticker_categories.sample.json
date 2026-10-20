@@ -1,0 +1,43 @@
+[
+  {
+    "category": "WORLD NEWS",
+    "items": [
+      "Global leaders conclude international sustainable energy accord with net zero milestones",
+      "United Nations summit passes landmark multilateral digital safety framework",
+      "International space agency completes construction of lunar gateway module",
+      "European rail consortium launches high-speed zero-emission transnational transit",
+      "Global humanitarian forum deploys rapid disaster relief logistics network"
+    ]
+  },
+  {
+    "category": "CRICKET",
+    "items": [
+      "National team secures decisive 5-wicket victory in international series opener",
+      "Star batter smashes fastest championship century in tournament history",
+      "Strike bowler claims remarkable six-wicket haul in thrilling death overs",
+      "International cricket council announces expanded global tournament venues",
+      "Historic super-over triumph crowns champions before sellout stadium crowd"
+    ]
+  },
+  {
+    "category": "BUSINESS",
+    "items": [
+      "Global equity markets climb to record heights led by AI infrastructure expansion",
+      "Central banks maintain benchmark interest rate stability amid cooling inflation",
+      "Clean technology investments surpass fossil fuels for third consecutive year",
+      "Major automotive manufacturer unveils affordable mass-market electric vehicle lineup",
+      "Sovereign semiconductor manufacturing fund allocates multibillion innovation grants"
+    ]
+  },
+  {
+    "category": "WEATHER",
+    "items": [
+      "Clear blue skies and comfortable seasonal warmth forecasted across metro regions",
+      "Mountain highways report optimal transit conditions with dry road surfaces",
+      "Coastal districts enjoy gentle offshore breezes and calm maritime conditions",
+      "Agricultural heartland receives beneficial seasonal rainfall ahead of planting",
+      "Weekend outlook indicates unbroken sunshine with crisp and pleasant evenings"
+    ]
+  }
+]
+

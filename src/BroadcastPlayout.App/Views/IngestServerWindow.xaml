@@ -1,0 +1,53 @@
+<Window x:Class="BroadcastPlayout.Views.IngestServerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix Ingest Server" Width="1320" Height="820" MinWidth="1000" MinHeight="650"
+        WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize" Background="{StaticResource Bg0Brush}" AllowDrop="True" Drop="Window_Drop" Icon="pack://application:,,,/Kashtrix.Playout;component/Branding/kashtrix-ingest.ico">
+    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Background="{StaticResource Bg0Brush}">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="54"/><RowDefinition Height="86"/><RowDefinition Height="*"/><RowDefinition Height="34"/></Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="#121519" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="14,0,8,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Grid VerticalAlignment="Center"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition/></Grid.ColumnDefinitions><Image Source="pack://application:,,,/Kashtrix.Playout;component/Branding/kashtrix-ingest.png" Width="34" Height="34" Stretch="Uniform"/><StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="KASHTRIX INGEST SERVER" FontWeight="Bold" FontSize="18"/><TextBlock Text="Multi-input · scheduled/compliance record · master+proxy · growing file · auto MAM/QC/replication" Foreground="{StaticResource MutedBrush}" FontSize="9"/></StackPanel></Grid>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><Button Click="Minimize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMinimizeGlyph}"/></Button><Button Click="Maximize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMaximizeGlyph}"/></Button><Button Click="Close_Click" Style="{StaticResource WindowCloseButton}"><TextBlock Style="{StaticResource WindowCloseGlyph}"/></Button></StackPanel>
+            </Grid>
+        </Border>
+        <Border Grid.Row="1" Margin="10,8,10,4" Style="{StaticResource PanelBorder}" Padding="9">
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="250"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Button Content="+ ADD INPUT" Click="AddInput_Click"/><ComboBox x:Name="NdiSourceCombo" Width="240" DisplayMemberPath="Name" ToolTip="NDI sources discovered every 10 seconds" Margin="4,0"/><Button Content="+ ADD NDI" Click="AddNdi_Click"/><Button Content="SCAN NDI 10s" Click="ScanNdi_Click"/><Button Content="START ALL" Click="StartAll_Click" BorderBrush="{StaticResource GoodBrush}"/><Button Content="STOP ALL" Click="StopAll_Click" BorderBrush="{StaticResource OnAirBrush}"/></StackPanel>
+                <Grid Grid.Column="1" Margin="10,0"><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions><TextBlock Text="RECORD FOLDER" Style="{StaticResource SectionCaption}"/><Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="OutputFolderBox"/><Button Grid.Column="1" Content="BROWSE" Click="BrowseFolder_Click" Margin="5,0,0,0"/></Grid></Grid>
+                <StackPanel Grid.Column="2" Margin="4,0"><TextBlock Text="RECORD PRESET · EDIT / BROADCAST" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="DefaultFormatBox" ItemsSource="{Binding RecordFormats}" SelectedIndex="0" Margin="0,4,0,0"/></StackPanel>
+                <Button Grid.Column="3" Content="OUTPUT DIAGNOSTICS" Click="Diagnostics_Click" Margin="8,18,0,0"/>
+            </Grid>
+        </Border>
+        <ScrollViewer Grid.Row="2" Margin="10,4" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Slots}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate><DataTemplate>
+                    <Border Width="540" Margin="5" Background="#090E13" BorderBrush="#2B363F" BorderThickness="1" Padding="7">
+                        <Grid><Grid.RowDefinitions><RowDefinition Height="216"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <Border Background="Black" BorderBrush="#343F48" BorderThickness="1"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/></Grid.ColumnDefinitions><Image Grid.Column="0" Source="{Binding PreviewImage}" Stretch="Uniform"/><TextBlock Grid.Column="0" Text="{Binding PreviewMessage}" Foreground="#7E8A93" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="15"/><Border Grid.Column="1" Background="#06090D" BorderBrush="#1C242C" BorderThickness="1,0,0,0" Padding="1" ToolTip="Audio Level"><ProgressBar Orientation="Vertical" Style="{StaticResource BroadcastBlueAudioMeter}" Value="{Binding AudioLevel, Mode=OneWay}" Maximum="100" VerticalAlignment="Stretch"/></Border></Grid></Border>
+                            <Grid Grid.Row="1" Margin="0,7,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding SourceSummary}" Foreground="{StaticResource MutedBrush}" FontSize="9" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding LastMessage}" Foreground="#C38BD8" FontSize="8" TextTrimming="CharacterEllipsis" MaxWidth="300"/></StackPanel><TextBlock Grid.Column="1" Text="{Binding Status}" Foreground="{StaticResource GoodBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/></Grid>
+                            <Grid Grid.Row="2" Margin="0,7,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="205"/></Grid.ColumnDefinitions><TextBox Text="{Binding OutputPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Master recording output path"/><ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.RecordFormats, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding RecordFormat, Mode=TwoWay}" Margin="5,0,0,0"/><TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding PresetSummary}" Foreground="#9D83B9" FontSize="8" TextWrapping="Wrap" Margin="2,5,2,0"/></Grid>
+                            <WrapPanel Grid.Row="3" Margin="0,7,0,0" VerticalAlignment="Center">
+                                <CheckBox Content="MASTER + PROXY" IsChecked="{Binding DualMasterProxy, Mode=TwoWay}" Margin="0,0,12,0"/>
+                                <CheckBox Content="GROWING FILE" IsChecked="{Binding GrowingFileMode, Mode=TwoWay}" Margin="0,0,12,0" ToolTip="Fragmented MP4 for play/edit while recording"/>
+                                <CheckBox Content="COMPLIANCE SEGMENTS" IsChecked="{Binding ComplianceMode, Mode=TwoWay}" Margin="0,0,8,0"/>
+                                <TextBox Text="{Binding SegmentMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="45" ToolTip="Segment minutes"/><TextBlock Text=" min" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                            </WrapPanel>
+                            <Grid Grid.Row="4" Margin="0,6,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="PROXY PATH" Style="{StaticResource SectionCaption}" VerticalAlignment="Center"/><TextBox Grid.Column="1" Text="{Binding ProxyOutputPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Simultaneous H.264 review/edit proxy path"/></Grid>
+                            <Grid Grid.Row="5" Margin="0,7,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="58"/><ColumnDefinition/><ColumnDefinition Width="58"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="START" Style="{StaticResource SectionCaption}" VerticalAlignment="Center"/><TextBox Grid.Column="1" Text="{Binding ScheduleStartText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Local time: yyyy-MM-dd HH:mm"/>
+                                <TextBlock Grid.Column="2" Text="STOP" Style="{StaticResource SectionCaption}" VerticalAlignment="Center" Margin="8,0,0,0"/><TextBox Grid.Column="3" Text="{Binding ScheduleStopText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Optional local stop: yyyy-MM-dd HH:mm"/>
+                                <StackPanel Grid.Column="4" Orientation="Horizontal"><Button Content="ARM" Click="ArmSchedule_Click" BorderBrush="{StaticResource GoodBrush}"/><Button Content="DISARM" Click="DisarmSchedule_Click"/><TextBlock Text="{Binding ScheduleBadge}" Foreground="#9BE2B3" VerticalAlignment="Center" Margin="5,0"/></StackPanel>
+                            </Grid>
+                            <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,7,0,0"><Button Content="RECORD" Click="StartRecord_Click" BorderBrush="{StaticResource OnAirBrush}"/><Button Content="STOP" Click="StopRecord_Click"/><Button Content="REMOVE" Click="RemoveSlot_Click"/></StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        <Border Grid.Row="3" Background="{StaticResource Bg1Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"><TextBlock x:Name="FooterStatus" Text="Ready · each source records independently" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0"/></Border>
+    </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,93 @@
+{
+  "specVersion": "2026-07-28",
+  "endpoint": "/mcp",
+  "transport": "Streamable HTTP",
+  "tools": [
+    {
+      "name": "playout_get_status",
+      "role": "viewer"
+    },
+    {
+      "name": "playout_take",
+      "role": "operator"
+    },
+    {
+      "name": "playout_hold",
+      "role": "operator"
+    },
+    {
+      "name": "playout_extend",
+      "role": "operator"
+    },
+    {
+      "name": "channel_controller_list",
+      "role": "viewer"
+    },
+    {
+      "name": "channel_controller_command",
+      "role": "operator"
+    },
+    {
+      "name": "cg_controller_play",
+      "role": "graphics"
+    },
+    {
+      "name": "cg_controller_update",
+      "role": "graphics"
+    },
+    {
+      "name": "mam_search_assets",
+      "role": "viewer"
+    },
+    {
+      "name": "mam_get_asset",
+      "role": "viewer"
+    },
+    {
+      "name": "mam_generate_proxy",
+      "role": "operator",
+      "taskCapable": true
+    },
+    {
+      "name": "mam_archive_asset",
+      "role": "operator",
+      "taskCapable": true
+    },
+    {
+      "name": "ingest_list_sources",
+      "role": "viewer"
+    },
+    {
+      "name": "ingest_schedule_job",
+      "role": "ingest"
+    },
+    {
+      "name": "nrcs_get_rundown",
+      "role": "journalist"
+    },
+    {
+      "name": "nrcs_publish_rundown",
+      "role": "journalist"
+    },
+    {
+      "name": "traffic_reconcile",
+      "role": "scheduler",
+      "taskCapable": true
+    },
+    {
+      "name": "monitoring_get_alarms",
+      "role": "viewer"
+    },
+    {
+      "name": "ha_get_state",
+      "role": "viewer"
+    }
+  ],
+  "resources": [
+    "kashtrix://channels/{channelId}/status",
+    "kashtrix://mam/assets/{assetId}",
+    "kashtrix://nrcs/rundowns/{rundownId}",
+    "kashtrix://monitoring/alarms"
+  ],
+  "tasksExtension": "io.modelcontextprotocol/tasks"
+}

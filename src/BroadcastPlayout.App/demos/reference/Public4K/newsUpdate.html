@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNG Sequence Player with Animated Ticker</title>
+    <link rel="stylesheet" href="assets/css/quantum.css">
+    <link rel="stylesheet" href="assets/css/newsUpdate.css">
+    <style>
+
+        #flashNews{
+            z-index: 1000;
+        }
+
+
+        canvas {
+            width: 100%; /* Make canvas fill the width of its container */
+            height: 60px; /* Set the height to 60px */
+            display: block; /* Remove default inline spacing */
+        }
+    </style>
+</head>
+<body>
+    <div class="updateContainer">
+    
+        <canvas id="newsUpdate"></canvas>
+        <div class="news-title-container">
+            <h1 class="news-title">News Update</h1>
+        </div>
+        <div class="text-container">
+            <p class="news-text nepali-font-Arab"></p>
+        </div>
+    </div>
+    
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="assets/js/sequenceImages.js"></script>
+    <script src="assets/js/gsapAnimation.js"></script>
+    <script src="assets/js/quantum.js"></script>
+
+    <script>
+        
+
+    const canvas = document.getElementById('newsUpdate');
+
+    
+
+                            createTicker({
+                                apiUrl: 'https://quantumcg.simulcast.com.np/api_data/data.php?content=top&token=aldfhalhiae342jdharhfk498234kh234fdasf&company=5',
+                                textSelector: '.news-text', // The selector for the text element to animate
+                                animationConfig: {
+                                    scaleStart: 4,
+                                    scaleEnd: 1,
+                                    opacityStart: 0,
+                                    opacityEnd: 1,
+                                    duration: 1200,
+                                    delayMultiplier: 40
+                                },
+                                textAnimationName:'animation-33',
+                                dataSourceKey:'Top',
+                            })
+            
+
+
+
+
+                            const ctx = canvas.getContext('2d');
+
+// Set canvas dimensions to match its display size
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+
+// Create a linear gradient
+const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0); // Horizontal gradient
+gradient.addColorStop(0, 'transparent'); // Light blue on the left
+gradient.addColorStop(0.1, '#4444f3'); // Dark blue in the middle
+gradient.addColorStop(0.9, '#4444f3'); // Dark blue in the middle
+gradient.addColorStop(1, 'transparent'); // Light blue on the right
+
+// Fill the rectangle with the gradient
+ctx.fillStyle = gradient;
+ctx.fillRect(0, 0, canvas.width, canvas.height); // Full width and 60px height
+
+// animateTextContent('.news-title', 'animation-10'); // Animate text with class `.my-text` using `fadeAnimation`
+
+//     // Example usage
+// animateTextContent('.my-text', 'fadeAnimation'); // Animate text with class `.my-text` using `fadeAnimation`
+animateTextContent('.news-title', 'animation-37', { loop: true }); // Animate text with class `.my-text` using `fadeAnimation` in a loop
+
+    </script>
+</body>
+</html>

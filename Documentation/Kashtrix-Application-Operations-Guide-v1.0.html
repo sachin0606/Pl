@@ -1,0 +1,164 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Kashtrix Application Operations Guide</title><style>
+:root{--purple:#5b2c83;--pink:#d33f8d;--ink:#171724;--muted:#5f6875;--line:#d9dce3;--soft:#f7f4fa;--code:#12141a;--green:#197a48;--orange:#a75c00;--red:#b3261e}
+*{box-sizing:border-box}
+body{font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);margin:0;background:white;line-height:1.46;font-size:14px}
+main{max-width:1100px;margin:0 auto;padding:30px 34px 60px}
+.cover{min-height:92vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border-bottom:6px solid var(--purple)}
+.brand{font-size:46px;font-weight:800;color:var(--purple);letter-spacing:1px}
+.subtitle{font-size:30px;font-weight:700;color:var(--pink);margin-top:8px}
+.meta{margin-top:22px;color:var(--muted);font-size:15px}
+h1{color:var(--purple);font-size:28px;margin:36px 0 12px;border-bottom:2px solid var(--pink);padding-bottom:6px}
+h2{color:var(--pink);font-size:21px;margin:28px 0 8px}
+h3{color:var(--ink);font-size:16px;margin:21px 0 6px}
+p{margin:6px 0 10px}
+.note,.warn,.ok{border-left:5px solid var(--purple);background:var(--soft);padding:12px 14px;margin:14px 0}
+.warn{border-color:var(--orange);background:#fff7e8}
+.ok{border-color:var(--green);background:#edf9f2}
+code{font-family:Consolas,Monaco,monospace}
+pre{background:var(--code);color:#f4f6f8;padding:14px;border-radius:7px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.35}
+table{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:12px}
+th{background:var(--purple);color:white;text-align:left;padding:8px;vertical-align:top}
+td{border:1px solid var(--line);padding:7px;vertical-align:top}
+tr:nth-child(even) td{background:#fbfbfd}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;background:#eee;font-size:11px;margin-right:3px}
+.badge.rest{background:#e9f4ff;color:#164f86}.badge.ws{background:#f6eefe;color:#6f2a8a}.badge.tcp{background:#eef8ef;color:#2c6d36}.badge.udp{background:#fff3df;color:#8a5500}.badge.mcp{background:#ffeaf5;color:#9b2a66}
+.small{font-size:12px;color:var(--muted)}
+.toc a{color:var(--purple);text-decoration:none}
+.endpoint{font-family:Consolas,monospace;font-weight:600}
+.pagebreak{page-break-before:always}
+@media print{
+  body{font-size:11px}
+  main{max-width:none;padding:14mm 13mm}
+  .cover{min-height:250mm}
+  h1,h2,h3{page-break-after:avoid}
+  table,pre,.note,.warn,.ok{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style></head><body><main>
+<section class="cover">
+  <div class="brand">KASHTRIX</div>
+  <div class="subtitle">Broadcast Suite Application Operations Guide</div>
+  <div class="meta">Playout • Channel Controller • CG Controller • CG Editor • MAM • Ingest • NRCS/MOS • Prompter • Scheduler/Traffic • Multiview/Monitoring • HA</div>
+  <div class="meta"><b>FIX44 Target Workflows</b><br>17 September 2026</div>
+</section>
+
+<h1>1. About this guide</h1>
+<div class="note"><b>Use:</b> This manual describes how the integrated Kashtrix applications are intended to operate together. It separates operator workflow from engineering configuration. Features requiring broadcast hardware or licensed codecs must be accepted on the target system before on-air use.</div>
+<h2>Platform flow</h2>
+<p><b>Ingest → MAM/QC/Proxy → NRCS/MOS/Scheduler → Playout → CG → Outputs → As-Run/Traffic reconciliation</b></p>
+<p>All applications share platform identity, command/event services and the common API. Operators should not have to re-enter the same media, story or graphics metadata in multiple applications.</p>
+<h1>2. Applications</h1><table><thead><tr><th>Application</th><th>Operational role</th></tr></thead><tbody><tr><td>Kashtrix Playout</td><td>Channel automation, Program/Preview, rundown, live inputs, audio/video, outputs, secondary/control events.</td></tr><tr><td>Channel Controller</td><td>Manage multiple playout clients by unique channel ID; aggregated state and multi-channel commands.</td></tr><tr><td>CG Controller</td><td>One graphics control surface targeting one/many channels independently; Preview/Program and live update.</td></tr><tr><td>CG Editor</td><td>Author compositions/templates, layers, keyframes, groups, data fields and reusable graphics.</td></tr><tr><td>MAM</td><td>Asset catalogue, master/proxy/components/versions/QC/rights/storage/archive/restore.</td></tr><tr><td>Ingest Server</td><td>Scheduled/manual capture, master+proxy, segmentation, source preview, MAM registration.</td></tr><tr><td>NRCS</td><td>Rundowns/stories, prompter body, media/CG MOS objects, publish to production.</td></tr><tr><td>Prompter</td><td>Live NRCS story text, story navigation and scrolling controls.</td></tr><tr><td>Scheduler / Traffic</td><td>Program schedules, breaks, traffic imports, BXF adapter boundary and reconciliation.</td></tr><tr><td>Multiview / Monitoring</td><td>Confidence views, channel/device status, alarms, resource/HA state.</td></tr></tbody></table>
+<h1>3. Playout operator workflow</h1>
+<ol>
+<li>Select/open the channel profile and confirm <b>channel ID</b>, video format and output arm state.</li>
+<li>Load or receive the rundown. Missing/invalid media should be highlighted before air.</li>
+<li>Use Preview/Cue to verify the selected media without changing Program.</li>
+<li>Use TAKE/NEXT/PLAY according to the channel automation mode. Program state must always be visible.</li>
+<li>For live events use HOLD, JIP, EXTEND or SHORTEN only when the event type supports the operation.</li>
+<li>Secondary events (CG, SCTE, caption, GPO, VDCP, RS-422, SNMP, TCP, MOS) use their event-specific parameter forms.</li>
+<li>During a commercial break, use the break editor rather than manually editing unrelated playlist fields.</li>
+<li>Monitor audio/loudness, caption/SCTE state, output status, next-event timing and alarms.</li>
+<li>As-run records are written automatically from actual on-air execution, not from planned schedule alone.</li>
+</ol>
+<div class="warn"><b>Standby node:</b> A backup engine may decode, synchronize and monitor while transmission output remains inhibited. Do not manually arm a standby node unless the HA procedure requires it.</div>
+
+<h1>4. Channel Controller workflow</h1>
+<p>Each playout instance has a permanent unique channel ID. Channel Controller is not another playout engine; it orchestrates connected clients.</p>
+<ol>
+<li>Add the channel by ID, host/API address and optional group.</li>
+<li>Verify status: connected, active/standby, on-air item, next item, output armed, alarm count and capabilities.</li>
+<li>Open a single channel for detailed control, or select multiple channels for group operations.</li>
+<li>Group commands return <b>individual per-channel results</b>. One failed channel must not be hidden behind a global success message.</li>
+<li>Use maintenance mode before engineering changes to an HA node.</li>
+</ol>
+
+<h1>5. CG Controller workflow</h1>
+<ol>
+<li>Select one or more playout targets.</li>
+<li>Select PREVIEW or PROGRAM bus. The buses remain independent.</li>
+<li>Choose a reusable CG template/composition and enter the exposed template fields.</li>
+<li>PREVIEW renders the full composition. TAKE moves the intended preview instance to Program.</li>
+<li>For multi-channel operation, the same template may use identical data or per-channel data overrides.</li>
+<li>UPDATE changes data in the existing on-air instance; it should not restart the animation unless the template defines that behavior.</li>
+<li>STOP removes a selected instance. CLEAR removes selected/all layers according to confirmation policy.</li>
+</ol>
+
+<h1>6. CG Editor workflow</h1>
+<p>New objects must start with no forced animation. Animation is an explicit authoring choice.</p>
+<ul>
+<li>Insert Text, Shape, Line, Image, Video/Sequence, Clock, Ticker, Roll and supported HTML/Web elements.</li>
+<li>Use the layer panel for Copy/Cut/Paste/Duplicate/Delete, Group/Ungroup and ordering.</li>
+<li>Use the custom Kashtrix color picker with visible swatch/preview; raw hex is optional engineering detail, not the only UI.</li>
+<li>Use keyframes for position, scale, rotation, opacity and supported object properties. Moving an already-keyed object updates the correct keyframe/base geometry instead of snapping back.</li>
+<li>Create reusable template fields for NRCS/CG Controller data; do not hard-code journalist data inside the design.</li>
+<li>Validate missing assets/fonts/data bindings before publishing a template.</li>
+</ul>
+
+<h1>7. MAM workflow</h1>
+<ol>
+<li>Register/import media. MAM assigns a permanent asset ID.</li>
+<li>Extract technical metadata and components (video, audio languages/channels, captions/subtitles, data).</li>
+<li>Calculate/check SHA-256 and detect duplicates.</li>
+<li>Run QC. Failed assets must not silently become READY.</li>
+<li>Create proxy and thumbnails/contact-sheet as configured.</li>
+<li>Apply editorial metadata, tags, rights window and workflow state.</li>
+<li>Track versions and master/proxy relationships.</li>
+<li>Archive/restore through managed jobs with checksum verification.</li>
+<li>Playout references the MAM asset, while cache/storage services resolve the physical copy.</li>
+</ol>
+
+<h1>8. Ingest workflow</h1>
+<ol>
+<li>Select input source and verify continuous preview/audio before recording.</li>
+<li>Choose master and optional simultaneous proxy profiles.</li>
+<li>Configure timecode policy, audio mapping, caption/subtitle capture and segment duration where supported.</li>
+<li>For scheduled ingest, set start/end or duration and recurrence. The job persists in the platform database.</li>
+<li>Low-disk and source-loss rules determine whether to stop, retry or raise alarm.</li>
+<li>On completion, recordings are automatically registered to MAM and linked master/proxy files receive the same asset context.</li>
+</ol>
+
+<h1>9. NRCS, MOS and Prompter workflow</h1>
+<ol>
+<li>Create a rundown and ordered stories.</li>
+<li>Journalist writes story body and prompter text once.</li>
+<li>Attach MAM media and CG templates as MOS objects with their template data.</li>
+<li>Publish validates objects and sends the production rundown to Kashtrix control/Playout; configured external MOS systems receive the supported MOS transactions.</li>
+<li>Prompter reads the same story body/state and follows story order without manual copy/paste.</li>
+<li>Late story edits produce realtime updates; the control system records the revision used on air.</li>
+</ol>
+
+<h1>10. Scheduler, Traffic and As-Run</h1>
+<ul>
+<li>Scheduler creates planned events and blocks with timing modes such as Follow, Hard Start, Soft Start and Manual/Hold policies.</li>
+<li>Traffic imports are normalized into Kashtrix traffic/event records. A BXF adapter is a transport/mapping boundary, not a replacement for the internal model.</li>
+<li>Commercial breaks have explicit break IDs and event membership.</li>
+<li>As-run comes from actual execution timestamps, actual durations and actual event/control outcomes.</li>
+<li>Reconciliation compares planned vs aired and reports missing, extra, late, shortened, extended or substituted events.</li>
+</ul>
+
+<h1>11. Monitoring and HA</h1>
+<ul>
+<li>Monitor process health, decoder/render timing, storage, network I/O, output readiness, PTP/NMOS/2110 adapters, ingest jobs, MAM tasks and alarms.</li>
+<li>1+1: primary and hot backup keep synchronized rundown/event/position state; only the active output is armed.</li>
+<li>N+M: shared backup capacity must be checked before accepting another failover.</li>
+<li>Failover must not depend on the operator UI process.</li>
+<li>All failover, maintenance and output-arm changes are audited.</li>
+</ul>
+
+<h1>12. External control and API use</h1>
+<p>For scripts and integrations use the Integration & API Reference included in the same package. Preferred selection:</p>
+<table><thead><tr><th>Need</th><th>Recommended interface</th></tr></thead><tbody><tr><td>CRUD/configuration/schedules/assets</td><td>REST</td></tr><tr><td>Realtime UI/status/events/control</td><td>WebSocket</td></tr><tr><td>Machine-to-machine persistent automation</td><td>TCP JSONL</td></tr><tr><td>Low-latency non-critical trigger/telemetry</td><td>UDP</td></tr><tr><td>AI/agent workflows using typed tools/resources</td><td>MCP Streamable HTTP</td></tr></tbody></table>
+<h1>13. Pre-air acceptance checklist</h1>
+<ul>
+<li>Windows solution builds all applications in Debug and Release x64.</li>
+<li>Channel Controller connects to every required playout instance and shows real state.</li>
+<li>CG Preview/Program and multi-channel routing are tested.</li>
+<li>MAM master/proxy/checksum/QC/archive/restore are tested with production-like files.</li>
+<li>Ingest scheduled master+proxy and MAM registration are tested.</li>
+<li>MOS/NRCS rundown changes and Prompter updates are tested under late-edit conditions.</li>
+<li>ST 2110/PTP/NMOS/2022-7 and DeckLink ANC/captions/SCTE are tested against real infrastructure.</li>
+<li>HA failover is tested by process kill, machine loss, output path loss and network loss.</li>
+<li>As-run/traffic reconciliation is verified against known schedules.</li>
+<li>REST/WebSocket/TCP/UDP/MCP access control and audit are tested.</li>
+</ul>
+</main></body></html>

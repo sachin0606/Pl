@@ -1,0 +1,5 @@
+POST http://127.0.0.1:9080/api/v1/channel-controller/commands
+Content-Type: application/json
+X-Kashtrix-Api-Key: YOUR_KEY
+
+{"requestId":"group-hold-1","targets":["KTX-PLAYOUT-01","KTX-PLAYOUT-02"],"action":"hold","params":{"reason":"test"}}

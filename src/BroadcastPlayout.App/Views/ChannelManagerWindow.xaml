@@ -1,0 +1,55 @@
+﻿<Window x:Class="BroadcastPlayout.Views.ChannelManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix Channel Manager" Width="1180" Height="720" MinWidth="980" MinHeight="620"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResizeWithGrip"
+        Background="{StaticResource Bg0Brush}" Foreground="{StaticResource TextBrush}">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="*"/><RowDefinition Height="54"/></Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="#080D12" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="14,0">
+                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center"><TextBlock Text="KASHTRIX CHANNEL MANAGER" FontSize="19" FontWeight="Bold"/><TextBlock Text="Create channel identities before client playouts connect" Foreground="{StaticResource MutedBrush}" FontSize="10"/></StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><Button Click="Minimize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMinimizeGlyph}"/></Button><Button Click="Maximize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMaximizeGlyph}"/></Button><Button Click="Close_Click" Style="{StaticResource WindowCloseButton}"><TextBlock Style="{StaticResource WindowCloseGlyph}"/></Button></StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="12">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="58*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="42*"/></Grid.ColumnDefinitions>
+            <Border Style="{StaticResource PanelBorder}">
+                <Grid><Grid.RowDefinitions><RowDefinition Height="44"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Margin="8,4"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="CONFIGURED CHANNELS" FontWeight="SemiBold" VerticalAlignment="Center"/><StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="+ NEW" Click="Add_Click"/><Button Content="DUPLICATE" Click="Duplicate_Click"/><Button Content="DELETE" Click="Delete_Click"/></StackPanel></Grid>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Channels}" SelectedItem="{Binding SelectedChannel, Mode=TwoWay}" AutoGenerateColumns="False" CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="ON" Binding="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
+                            <DataGridTextColumn Header="CHANNEL ID" Binding="{Binding ChannelId}" Width="140" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="NAME" Binding="{Binding ChannelName}" Width="*"/>
+                            <DataGridTextColumn Header="FORMAT" Binding="{Binding Format}" Width="105"/>
+                            <DataGridTextColumn Header="HOST" Binding="{Binding Host}" Width="130"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource PanelBorder}" Padding="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+                    <TextBlock Text="CHANNEL PROFILE" FontSize="17" FontWeight="Bold"/>
+                    <TextBlock Text="Unique Channel ID" Style="{StaticResource SectionCaption}" Margin="0,14,0,4"/><TextBox Text="{Binding SelectedChannel.ChannelId, UpdateSourceTrigger=LostFocus}"/>
+                    <Button Content="GENERATE UNIQUE ID" Click="GenerateId_Click" HorizontalAlignment="Left" Margin="0,7,0,0"/>
+                    <TextBlock Text="Channel name" Style="{StaticResource SectionCaption}" Margin="0,12,0,4"/><TextBox Text="{Binding SelectedChannel.ChannelName, UpdateSourceTrigger=LostFocus}"/>
+                    <TextBlock Text="Playout format" Style="{StaticResource SectionCaption}" Margin="0,12,0,4"/><ComboBox SelectedValue="{Binding SelectedChannel.Format, Mode=TwoWay}" SelectedValuePath="Content"><ComboBoxItem Content="2160p50"/><ComboBoxItem Content="2160p25"/><ComboBoxItem Content="1080p59.94"/><ComboBoxItem Content="1080p50"/><ComboBoxItem Content="1080p30"/><ComboBoxItem Content="1080p29.97"/><ComboBoxItem Content="1080p25"/><ComboBoxItem Content="1080p24"/><ComboBoxItem Content="1080p23.976"/><ComboBoxItem Content="1080i59.94"/><ComboBoxItem Content="1080i50"/><ComboBoxItem Content="720p59.94"/><ComboBoxItem Content="720p50"/><ComboBoxItem Content="720p30"/><ComboBoxItem Content="720p25"/></ComboBox>
+                    <TextBlock Text="Expected host / node" Style="{StaticResource SectionCaption}" Margin="0,12,0,4"/><TextBox Text="{Binding SelectedChannel.Host, UpdateSourceTrigger=LostFocus}"/>
+                    <TextBlock Text="Notes" Style="{StaticResource SectionCaption}" Margin="0,12,0,4"/><TextBox Text="{Binding SelectedChannel.Notes, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" Height="100" TextWrapping="Wrap"/>
+                    <CheckBox Content="Enabled" IsChecked="{Binding SelectedChannel.Enabled}" Style="{StaticResource ToggleSwitch}" Margin="0,14,0,0"/>
+                    <Border Style="{StaticResource PanelBorder}" Margin="0,18,0,0" Padding="12"><TextBlock Text="A client becomes ONLINE when its Kashtrix Playout reports the same unique Channel ID to this controller." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"/></Border>
+                </StackPanel></ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="12,0,12,8"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="150"/><ColumnDefinition Width="140"/></Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Button Content="LOAD DEMO CHANNELS" Click="LoadDemo_Click" Style="{StaticResource DemoActionButton}"/><TextBlock Text="Demo data is safe for UI/controller testing." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/></StackPanel>
+            <Button Grid.Column="1" Content="CANCEL" Click="Close_Click"/>
+            <Button Grid.Column="2" Content="SAVE CHANNELS" Click="Save_Click" Background="#351447" BorderBrush="{StaticResource PinkBrush}" FontWeight="Bold"/>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,221 @@
+﻿<Window x:Class="Kashtrix.NRCS.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix NRCS" Width="1720" Height="980" MinWidth="1240" MinHeight="760"
+        Background="{StaticResource Bg0Brush}" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize">
+    <Grid Margin="12">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+
+        <Border Style="{StaticResource PanelBorder}" Padding="14" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="KASHTRIX NRCS · NEWSROOM" FontSize="23" FontWeight="Bold" Foreground="#E6C4FF"/>
+                    <TextBlock Text="Octopus-style planning · assignment desk · collaborative story/rundown workflow · MOS/CG · live prompter state · playout publish" Foreground="{StaticResource MutedBrush}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="+ ASSIGNMENT" Click="NewAssignment_Click"/>
+                    <Button Content="+ STORY" Click="NewStory_Click" Margin="8,0,0,0"/>
+                    <Button Content="+ RUNDOWN" Click="NewRundown_Click" Margin="8,0,0,0"/>
+                    <Button Content="LOAD PROFESSIONAL DEMO" Click="LoadProfessionalDemo_Click" Margin="8,0,0,0" BorderBrush="{StaticResource AccentBrush}"/><Button Content="OPEN PROMPTER" Click="OpenPrompter_Click" Margin="8,0,0,0"/>
+                    <Button Content="REFRESH" Click="Refresh_Click" Margin="8,0,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Button Content="—" Width="34" Height="28" Click="Minimize_Click" ToolTip="Minimize"/>
+                    <Button Content="□" Width="34" Height="28" Click="Maximize_Click" ToolTip="Maximize / Restore"/>
+                    <Button Content="✕" Width="34" Height="28" Click="Close_Click" Foreground="#FF8D8D" ToolTip="Close"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" x:Name="WorkspaceTabs" Margin="0,10,0,10">
+            <TabItem Header="PLANNING / ASSIGNMENTS">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="3*"/></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource PanelBorder}" Padding="10" Margin="0,0,8,0">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="ASSIGNMENT DESK" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="AssignmentCountText" Foreground="{StaticResource MutedBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,5,0"><TextBlock Text="PLANNING VIEW" FontSize="10" Foreground="{StaticResource MutedBrush}"/><ComboBox x:Name="AssignmentFilterModeBox" SelectionChanged="AssignmentFilter_Changed"/></StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="5,0"><TextBlock Text="DAY" FontSize="10" Foreground="{StaticResource MutedBrush}"/><DatePicker x:Name="AssignmentDateFilter" SelectedDateChanged="AssignmentFilter_Changed"/></StackPanel>
+                                    <Button Grid.Column="2" Content="TODAY" Click="AssignmentToday_Click" Margin="5,18,0,0" Padding="10,4"/>
+                                </Grid>
+                            </StackPanel>
+                            <DataGrid x:Name="AssignmentGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionChanged="AssignmentGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="DUE" Binding="{Binding DueUtc, StringFormat={}{0:MM-dd HH:mm}}" Width="100"/>
+                                    <DataGridTextColumn Header="TITLE" Binding="{Binding Title}" Width="*"/>
+                                    <DataGridTextColumn Header="DESK" Binding="{Binding Desk}" Width="90"/>
+                                    <DataGridTextColumn Header="ASSIGNEE" Binding="{Binding Assignee}" Width="120"/>
+                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="105"/>
+                                    <DataGridTextColumn Header="PRIORITY" Binding="{Binding Priority}" Width="90"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Padding="14">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="ASSIGNMENT EDITOR" FontSize="18" FontWeight="Bold"/>
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="TITLE"/><TextBox x:Name="AssignmentTitleBox"/>
+                                        <TextBlock Text="ASSIGNEE" Margin="0,10,0,0"/><TextBox x:Name="AssignmentAssigneeBox"/>
+                                        <TextBlock Text="DESK" Margin="0,10,0,0"/><ComboBox x:Name="AssignmentDeskBox"/>
+                                        <TextBlock Text="LOCATION" Margin="0,10,0,0"/><TextBox x:Name="AssignmentLocationBox"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                        <TextBlock Text="STATUS"/><ComboBox x:Name="AssignmentStatusBox"/>
+                                        <TextBlock Text="PRIORITY" Margin="0,10,0,0"/><ComboBox x:Name="AssignmentPriorityBox"/>
+                                        <TextBlock Text="DUE (LOCAL yyyy-MM-dd HH:mm)" Margin="0,10,0,0"/><TextBox x:Name="AssignmentDueBox"/>
+                                        <TextBlock Text="LINKED STORY" Margin="0,10,0,0"/><ComboBox x:Name="AssignmentStoryBox" DisplayMemberPath="Slug" SelectedValuePath="Id"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="EDITORIAL ANGLE / BRIEF" Margin="0,12,0,4"/><TextBox x:Name="AssignmentAngleBox" Height="120" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                                <TextBlock Text="NOTES / CONTACTS / LOGISTICS" Margin="0,12,0,4"/><TextBox x:Name="AssignmentNotesBox" Height="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button Content="SAVE ASSIGNMENT" Click="SaveAssignment_Click"/>
+                                    <Button Content="CREATE STORY FROM ASSIGNMENT" Click="CreateStoryFromAssignment_Click" Margin="8,0,0,0"/>
+                                    <Button Content="DELETE" Click="DeleteAssignment_Click" Margin="8,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="STORY DESK">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="420"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource PanelBorder}" Padding="10" Margin="0,0,8,0">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top">
+                                <TextBlock Text="STORY BANK" FontWeight="Bold"/>
+                                <DockPanel Margin="0,8"><Button DockPanel.Dock="Right" Content="SEARCH" Click="SearchStories_Click" Margin="8,0,0,0"/><TextBox x:Name="StorySearchBox" KeyDown="StorySearchBox_KeyDown"/></DockPanel>
+                            </StackPanel>
+                            <DataGrid x:Name="StoryBankGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionChanged="StoryBankGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SLUG" Binding="{Binding Slug}" Width="*"/>
+                                    <DataGridTextColumn Header="TYPE" Binding="{Binding StoryType}" Width="70"/><DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90"/>
+                                    <DataGridTextColumn Header="PRI" Binding="{Binding Priority}" Width="60"/>
+                                    <DataGridTextColumn Header="PRESENTER" Binding="{Binding Presenter}" Width="110"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Padding="14">
+                        <Grid>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <DockPanel>
+                                <TextBlock Text="STORY EDITOR" FontSize="18" FontWeight="Bold"/>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                    <Button Content="ADD TO SELECTED RUNDOWN" Click="AddStoryToRundown_Click"/>
+                                    <Button Content="SAVE" Click="SaveStory_Click" Margin="8,0,0,0"/>
+                                    <Button Content="DELETE" Click="DeleteStory_Click" Margin="8,0,0,0"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,6,0"><TextBlock Text="SLUG"/><TextBox x:Name="SlugBox"/><TextBlock Text="PRESENTER" Margin="0,8,0,0"/><TextBox x:Name="PresenterBox"/><TextBlock Text="WRITER" Margin="0,8,0,0"/><TextBox x:Name="WriterBox"/></StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="6,0"><TextBlock Text="STATUS"/><ComboBox x:Name="StoryStatusBox"/><TextBlock Text="EDITOR" Margin="0,8,0,0"/><TextBox x:Name="EditorBox"/><TextBlock Text="CATEGORY / DESK" Margin="0,8,0,0"/><ComboBox x:Name="StoryCategoryBox"/></StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="6,0,0,0"><TextBlock Text="PRIORITY"/><ComboBox x:Name="StoryPriorityBox"/><TextBlock Text="STORY / MOS TYPE" Margin="0,8,0,0"/><ComboBox x:Name="StoryTypeBox"/><TextBlock Text="DURATION (SEC)" Margin="0,8,0,0"/><TextBox x:Name="DurationBox" Text="30"/><TextBlock Text="LANGUAGE" Margin="0,8,0,0"/><TextBox x:Name="LanguageBox" Text="en"/></StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="SCRIPT / PROMPTER BODY" Margin="0,12,0,4"/><TextBox x:Name="BodyBox" AcceptsReturn="True" Height="260" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" SpellCheck.IsEnabled="True"/>
+                                    <TextBlock Text="PRIVATE STORY NOTES (NOT PROMPTED)" Margin="0,10,0,4"/><TextBox x:Name="StoryNotesBox" AcceptsReturn="True" Height="80" TextWrapping="Wrap"/>
+                                    <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,6,0"><TextBlock Text="MEDIA / MAM MASTER PATH"/><DockPanel><Button Content="BROWSE" DockPanel.Dock="Right" Click="BrowseMedia_Click" Margin="8,0,0,0"/><TextBox x:Name="MediaPathBox"/></DockPanel><TextBlock Text="CG TEMPLATE / PROJECT" Margin="0,8,0,0"/><ComboBox x:Name="CgTemplateBox" IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True" SelectionChanged="CgTemplateBox_SelectionChanged"/><TextBlock x:Name="CgTemplateInfoText" Text="Choose from the canonical 200-template catalog." FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="6,0,0,0"><TextBlock Text="CG LAYER / Z-ORDER"/><ComboBox x:Name="CgLayerBox" IsEditable="True" Text="20"/><TextBlock Text="CG DATA JSON" Margin="0,8,0,0"/><TextBox x:Name="CgDataBox" AcceptsReturn="True" Height="90" Text="{}" FontFamily="Consolas"/></StackPanel>
+                                    </Grid>
+                                    <DockPanel Margin="0,12,0,4">
+                                        <TextBlock Text="REVISION HISTORY" FontWeight="Bold"/>
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <TextBlock x:Name="VersionCompareText" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <Button Content="RESTORE SELECTED REVISION" Click="RestoreRevision_Click"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <DataGrid x:Name="VersionGrid" Height="130" AutoGenerateColumns="False" IsReadOnly="True" SelectionChanged="VersionGrid_SelectionChanged"><DataGrid.Columns><DataGridTextColumn Header="VER" Binding="{Binding VersionId}" Width="55"/><DataGridTextColumn Header="TIME" Binding="{Binding CreatedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" Width="160"/><DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90"/><DataGridTextColumn Header="WRITER" Binding="{Binding Writer}" Width="100"/><DataGridTextColumn Header="SLUG" Binding="{Binding Slug}" Width="*"/></DataGrid.Columns></DataGrid>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,5,0"><TextBlock Text="CURRENT SCRIPT" FontSize="10" Foreground="{StaticResource MutedBrush}"/><TextBox x:Name="CurrentRevisionBodyBox" Height="95" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/></StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="5,0,0,0"><TextBlock Text="SELECTED REVISION" FontSize="10" Foreground="{StaticResource MutedBrush}"/><TextBox x:Name="SelectedRevisionBodyBox" Height="95" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/></StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="RUNDOWN / LIVE">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/><ColumnDefinition Width="330"/></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource PanelBorder}" Padding="10" Margin="0,0,8,0"><DockPanel><TextBlock DockPanel.Dock="Top" Text="RUNDOWNS" FontWeight="Bold" Margin="0,0,0,8"/><ListBox x:Name="RundownList" DisplayMemberPath="Name" SelectionChanged="RundownList_SelectionChanged"/></DockPanel></Border>
+                    <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Padding="10" Margin="0,0,8,0">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock x:Name="RundownHeader" Text="SELECT A RUNDOWN" FontWeight="Bold"/><TextBlock x:Name="RundownTimingText" Foreground="{StaticResource MutedBrush}"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="▲" Width="42" Click="MoveUp_Click"/><Button Content="▼" Width="42" Margin="5,0,0,0" Click="MoveDown_Click"/><Button Content="REMOVE" Margin="5,0,0,0" Click="RemoveRundownItem_Click"/></StackPanel></Grid>
+                            <DataGrid x:Name="RundownGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionChanged="RundownGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#" Binding="{Binding Sequence}" Width="38"/>
+                                    <DataGridTextColumn Header="START" Binding="{Binding PlannedStartUtc, StringFormat={}{0:HH:mm:ss}}" Width="75"/>
+                                    <DataGridTextColumn Header="END" Binding="{Binding PlannedEndUtc, StringFormat={}{0:HH:mm:ss}}" Width="75"/>
+                                    <DataGridTextColumn Header="SEG" Binding="{Binding Segment}" Width="48"/>
+                                    <DataGridTextColumn Header="SLUG" Binding="{Binding Slug}" Width="*"/>
+                                    <DataGridTextColumn Header="TYPE" Binding="{Binding StoryType}" Width="65"/>
+                                    <DataGridTextColumn Header="PRESENTER" Binding="{Binding Presenter}" Width="105"/>
+                                    <DataGridTextColumn Header="DUR" Binding="{Binding DurationSeconds}" Width="55"/>
+                                    <DataGridCheckBoxColumn Header="SKIP" Binding="{Binding IsSkipped}" Width="55"/>
+                                    <DataGridCheckBoxColumn Header="LIVE" Binding="{Binding IsLive}" Width="50"/>
+                                    <DataGridTextColumn Header="MODE" Binding="{Binding StartMode}" Width="80"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource PanelBorder}" Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="RUNDOWN ITEM" FontSize="17" FontWeight="Bold"/>
+                            <TextBlock x:Name="RundownItemSlug" Text="No item selected" Foreground="#E6C4FF" FontSize="15" Margin="0,8,0,10" TextWrapping="Wrap"/>
+                            <TextBlock Text="SEGMENT"/><TextBox x:Name="SegmentBox" Text="A"/>
+                            <TextBlock Text="START MODE" Margin="0,8,0,0"/><ComboBox x:Name="StartModeBox"/>
+                            <TextBlock Text="ITEM STATUS" Margin="0,8,0,0"/><ComboBox x:Name="ItemStatusBox"/>
+                            <CheckBox x:Name="SkipCheck" Content="SKIP / CLOAK FROM AIR" Margin="0,12,0,0"/>
+                            <CheckBox x:Name="LockCheck" Content="LOCK RUNDOWN ITEM" Margin="0,8,0,0"/>
+                            <Button Content="SAVE ITEM SETTINGS" Click="SaveRundownItem_Click" Margin="0,12,0,0"/>
+                            <Separator Margin="0,14"/>
+                            <Button Content="TAKE SELECTED STORY LIVE" Click="TakeLive_Click"/>
+                            <CheckBox x:Name="AutoAirCheck" Content="AUTO PLAYOUT + PROGRAM CG ON LIVE" IsChecked="True" Foreground="#E6C4FF" Margin="0,8,0,0"/>
+                            <Button Content="NEXT STORY LIVE" Click="NextLive_Click" Margin="0,8,0,0"/>
+                            <Button Content="CLEAR ON-AIR STATE" Click="ClearLive_Click" Margin="0,8,0,0"/>
+                            <TextBlock x:Name="LiveStateText" Text="OFF AIR" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                            <Separator Margin="0,14"/>
+                            <Button Content="PUBLISH TO PLAYOUT" Click="PublishPlayout_Click"/>
+                            <Button Content="PUBLISH MOS / NCS" Click="PublishMos_Click" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="INTEGRATION / STATUS">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource PanelBorder}" Padding="14" Margin="0,0,8,0"><StackPanel><TextBlock Text="PRODUCTION INTEGRATION" FontSize="18" FontWeight="Bold"/><TextBlock Text="MOS / NCS" Margin="0,12,0,0" FontWeight="Bold"/><TextBlock Text="Rundown stories publish media and CG objects through the existing Automation Gateway MOS transport." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="PLAYOUT" Margin="0,12,0,0" FontWeight="Bold"/><TextBlock Text="Only non-skipped rundown items are translated to CLIP and MOS events and then the channel receives reload_playlist." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="PROMPTER" Margin="0,12,0,0" FontWeight="Bold"/><TextBlock Text="Prompter is a separate executable. It follows the shared live-story state or can be operated independently by run order." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/></StackPanel></Border>
+                    <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Padding="14"><StackPanel><TextBlock Text="NEWSROOM CAPABILITIES" FontSize="18" FontWeight="Bold"/><TextBlock Text="• Assignment planning with day / next-7-days / overdue views&#x0a;• Independent story bank reusable across rundowns&#x0a;• Script metadata, approval status, revision compare and restore&#x0a;• Rundown timing, segments, start modes, skip/cloak and lock&#x0a;• Live-story state shared with Prompter&#x0a;• MOS media/CG publishing and direct Playout publish&#x0a;• SQLite/WAL multi-process persistence for NRCS + Prompter" Margin="0,12,0,0" TextWrapping="Wrap"/></StackPanel></Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Style="{StaticResource PanelBorder}" Padding="10">
+            <DockPanel>
+                <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
+                <TextBlock x:Name="DbText" DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

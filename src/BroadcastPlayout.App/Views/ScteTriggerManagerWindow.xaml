@@ -1,0 +1,221 @@
+<Window x:Class="BroadcastPlayout.Views.ScteTriggerManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SCTE 35 / 104 TRIGGER &amp; AD BREAK MANAGER"
+        Width="960" Height="680" MinWidth="800" MinHeight="550"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResize"
+        Background="#0A0E13" Foreground="#F1F5F9" SnapsToDevicePixels="True">
+
+    <Border BorderBrush="#8055B3" BorderThickness="1" Background="#0A0E13">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="48"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0" Background="#101720" BorderBrush="#20272E" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="12,0,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="⚡" FontSize="15" Foreground="#C084FC" Margin="0,0,8,0"/>
+                        <TextBlock Text="SCTE-35 / SCTE-104 DIGITAL AD INSERTION (DPI) &amp; CUE MANAGER" FontWeight="Bold" FontSize="13" Foreground="#F8FAFC"/>
+                        <Border Background="#2B1740" BorderBrush="#8055B3" BorderThickness="1" CornerRadius="3" Padding="6,1" Margin="10,0,0,0">
+                            <TextBlock Text="SENDER &amp; RECEIVER ACTIVE" FontSize="9" FontWeight="Bold" Foreground="#C084FC"/>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="—" Width="30" Height="24" Click="Minimize_Click" Style="{StaticResource ChromeButton}" ToolTip="Minimize"/>
+                        <Button Content="✕" Width="30" Height="24" Click="Cancel_Click" Style="{StaticResource ChromeButton}" Foreground="#FF8989" ToolTip="Close"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Content: Left (Triggers & Actions) | Right (Settings) -->
+            <Grid Grid.Row="1" Margin="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT SIDE: TRIGGER NAME & LIST & ACTIONS -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="SCTE 35 TRIGGER NAME" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" Margin="0,0,0,4"/>
+                        <TextBox x:Name="TriggerNameText" Height="28" Padding="6,4" Background="#121820" Foreground="#F8FAFC" BorderBrush="#20272E" Text="Commercial Break 60s (Cue In)"/>
+                    </StackPanel>
+
+                    <DockPanel Grid.Row="1" Margin="0,0,0,12">
+                        <TextBlock DockPanel.Dock="Top" Text="SCTE 35 TRIGGER" FontSize="11" FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,0,4"/>
+                        <ListBox x:Name="TriggerListBox" Background="#06090C" BorderBrush="#20272E" BorderThickness="1" SelectionChanged="TriggerListBox_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="2,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="11.5" Foreground="#E2E8F0"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Summary}" FontSize="10.5" Foreground="#818CF8"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+
+                    <!-- Break Immediate Action Buttons -->
+                    <StackPanel Grid.Row="2" Margin="0,0,0,10">
+                        <Button Content="START IMMEDIATE BREAK WITHOUT AUTO RETURN (CUE IN)" Click="StartImmediateNoAutoReturn_Click"
+                                Height="34" Margin="0,0,0,6" Background="#3D1D11" BorderBrush="#D97706" Foreground="#FDE68A" FontWeight="Bold" FontSize="11" Cursor="Hand"/>
+                        <Button Content="STOP IMMEDIATE BREAK AND RETURN TO PROGRAM (CUE OUT)" Click="StopImmediateCueOut_Click"
+                                Height="34" Margin="0,0,0,6" Background="#143022" BorderBrush="#10B981" Foreground="#A7F3D0" FontWeight="Bold" FontSize="11" Cursor="Hand"/>
+                        <Button Content="START IMMEDIATE BREAK WITH FIXED DURATION AND AUTO RETURN TO PROGRAM" Click="StartImmediateWithDuration_Click"
+                                Height="36" Margin="0,0,0,10" Background="#2E1B4E" BorderBrush="#A855F7" Foreground="#E9D5FF" FontWeight="Bold" FontSize="10.5" Cursor="Hand"/>
+
+                        <CheckBox x:Name="SameEventIdCheck" Content="Use Same Event ID for Cue Out SCTE" IsChecked="True" Foreground="#CBD5E1" Margin="0,0,0,10"/>
+
+                        <!-- On Break Play Option -->
+                        <Border Background="#101620" BorderBrush="#20272E" BorderThickness="1" CornerRadius="3" Padding="8">
+                            <StackPanel>
+                                <TextBlock Text="On Break Play:" FontWeight="SemiBold" FontSize="10.5" Foreground="#38BDF8" Margin="0,0,0,6"/>
+                                <WrapPanel>
+                                    <RadioButton x:Name="PlayCurrentFileRadio" Content="Current File in Playlist" IsChecked="True" Foreground="#F1F5F9" Margin="0,0,14,4"/>
+                                    <RadioButton x:Name="PlayBlackRadio" Content="Black Image" Foreground="#F1F5F9" Margin="0,0,14,4"/>
+                                    <RadioButton x:Name="PlayCustomImageRadio" Content="Custom Image" Foreground="#F1F5F9" Margin="0,0,14,4"/>
+                                    <RadioButton x:Name="PlayCustomVideoRadio" Content="Custom Video" Foreground="#F1F5F9" Margin="0,0,0,4"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <!-- RIGHT SIDE: SCTE 35 SETTINGS -->
+                <Border Grid.Column="2" Background="#0E141C" BorderBrush="#20272E" BorderThickness="1" CornerRadius="4" Padding="14">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="SCTE 35 SETTINGS" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" Margin="0,0,0,12"/>
+
+                            <!-- PTS Adjustment Time -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="PTS Adjustment Time" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <TextBox Grid.Column="1" x:Name="PtsAdjustmentText" Text="0" Height="24" Padding="4,2" HorizontalContentAlignment="Center" Background="#161F2A" Foreground="#FFFFFF" BorderBrush="#20272E"/>
+                                <TextBlock Grid.Column="2" Text="seconds (default 0)" VerticalAlignment="Center" Foreground="#64748B" FontSize="10" Margin="6,0,0,0"/>
+                            </Grid>
+
+                            <!-- Splice Event Cancel Indicator -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Splice Event Cancel Indicator" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <RadioButton x:Name="CancelFalseRadio" Content="False" IsChecked="True" Foreground="#F1F5F9" Margin="0,0,10,0"/>
+                                    <RadioButton x:Name="CancelTrueRadio" Content="True" Foreground="#F1F5F9"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Out Of Network Indicator -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Out Of Network Indicator" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <RadioButton x:Name="OutOfNetFalseRadio" Content="False" Foreground="#F1F5F9" Margin="0,0,10,0"/>
+                                    <RadioButton x:Name="OutOfNetTrueRadio" Content="True" IsChecked="True" Foreground="#F1F5F9"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Program Splice Flag (ptsTime) -->
+                            <CheckBox x:Name="ProgramSpliceCheck" Content="Program Splice Flag (ptsTime)" IsChecked="True" Foreground="#E2E8F0" FontSize="11" Margin="0,0,0,10"/>
+
+                            <!-- Schedule Splice In -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Schedule Splice In" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <TextBox Grid.Column="1" x:Name="ScheduleSpliceInText" Text="4" Height="24" Padding="4,2" HorizontalContentAlignment="Center" Background="#161F2A" Foreground="#FFFFFF" BorderBrush="#20272E"/>
+                                <TextBlock Grid.Column="2" Text="seconds" VerticalAlignment="Center" Foreground="#64748B" FontSize="10" Margin="6,0,0,0"/>
+                            </Grid>
+
+                            <!-- Splice Immediate Flag -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Splice Immediate Flag" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <RadioButton x:Name="ImmediateFalseRadio" Content="False" IsChecked="True" Foreground="#F1F5F9" Margin="0,0,10,0"/>
+                                    <RadioButton x:Name="ImmediateTrueRadio" Content="True" Foreground="#F1F5F9"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Avail Num -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Avail Num" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="No: " VerticalAlignment="Center" Foreground="#94A3B8" FontSize="10" Margin="0,0,6,0"/>
+                                <TextBox Grid.Column="2" x:Name="AvailNumText" Text="0" Height="24" Padding="4,2" HorizontalContentAlignment="Center" Background="#161F2A" Foreground="#FFFFFF" BorderBrush="#20272E"/>
+                                <TextBlock Grid.Column="3" Text="(default 0)" VerticalAlignment="Center" Foreground="#64748B" FontSize="10" Margin="6,0,0,0"/>
+                            </Grid>
+
+                            <!-- Avails Expected -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Avails Expected" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="No: " VerticalAlignment="Center" Foreground="#94A3B8" FontSize="10" Margin="0,0,6,0"/>
+                                <TextBox Grid.Column="2" x:Name="AvailsExpectedText" Text="0" Height="24" Padding="4,2" HorizontalContentAlignment="Center" Background="#161F2A" Foreground="#FFFFFF" BorderBrush="#20272E"/>
+                                <TextBlock Grid.Column="3" Text="(default 0)" VerticalAlignment="Center" Foreground="#64748B" FontSize="10" Margin="6,0,0,0"/>
+                            </Grid>
+
+                            <!-- Break Duration Checkbox -->
+                            <CheckBox x:Name="BreakDurationCheck" Content="Break Duration" IsChecked="True" Foreground="#E2E8F0" FontSize="11" Margin="0,0,0,10"/>
+
+                            <!-- Auto Return -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Auto Return" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <RadioButton x:Name="AutoReturnFalseRadio" Content="False" Foreground="#F1F5F9" Margin="0,0,10,0"/>
+                                    <RadioButton x:Name="AutoReturnTrueRadio" Content="True" IsChecked="True" Foreground="#F1F5F9"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Duration -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Duration:" VerticalAlignment="Center" Foreground="#E2E8F0" FontSize="11" FontWeight="SemiBold"/>
+                                <TextBox Grid.Column="1" x:Name="DurationText" Text="60" Height="24" Padding="4,2" HorizontalContentAlignment="Center" Background="#161F2A" Foreground="#FFFFFF" BorderBrush="#20272E"/>
+                                <TextBlock Grid.Column="2" Text="seconds" VerticalAlignment="Center" Foreground="#64748B" FontSize="10" Margin="6,0,0,0"/>
+                            </Grid>
+
+                            <!-- CREATE SCTE 35 BUTTON -->
+                            <Button Content="CREATE SCTE 35" Click="CreateScte35_Click" Height="34" Background="#1E293B" BorderBrush="#475569" Foreground="#F8FAFC" FontWeight="Bold" FontSize="11" Cursor="Hand" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+
+            <!-- Bottom Row: Cancel / OK -->
+            <Border Grid.Row="2" Background="#0C1116" BorderBrush="#20272E" BorderThickness="0,1,0,0" Padding="14,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="ETSI / ANSI SCTE-35 2022 &amp; SCTE-104 compliant · MPEG-TS Stream Type 0x86 · Live Automation Bridge" VerticalAlignment="Center" Foreground="#64748B" FontSize="10.5"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="CANCEL" Click="Cancel_Click" Width="84" Height="28" Margin="0,0,8,0" Background="#161E28" BorderBrush="#2A3441" Foreground="#94A3B8" Cursor="Hand"/>
+                        <Button Content="OK" Click="Ok_Click" Width="84" Height="28" Background="#4A2670" BorderBrush="#8055B3" Foreground="#FFFFFF" FontWeight="Bold" Cursor="Hand"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

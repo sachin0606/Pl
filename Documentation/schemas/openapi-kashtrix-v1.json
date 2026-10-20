@@ -1,0 +1,644 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kashtrix Broadcast Platform API",
+    "version": "1.0.0",
+    "description": "FIX44 target contract for Playout, Channel Controller, CG Controller, CG, MAM, Ingest, NRCS, Prompter, Traffic, Monitoring and HA."
+  },
+  "servers": [
+    {
+      "url": "https://localhost:9080"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Kashtrix-Api-Key"
+      },
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Command": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "action"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {}
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKey": []
+    },
+    {
+      "Bearer": []
+    }
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Platform health",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/capabilities": {
+      "get": {
+        "summary": "Platform capabilities",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/playout/channels": {
+      "get": {
+        "summary": "List playout channels",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/playout/channels/{channelId}/status": {
+      "get": {
+        "summary": "Channel status",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/playout/channels/{channelId}/commands": {
+      "post": {
+        "summary": "Execute playout command",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/channel-controller/channels": {
+      "get": {
+        "summary": "List managed channels",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/channel-controller/commands": {
+      "post": {
+        "summary": "Multi-channel command",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/cg-controller/play": {
+      "post": {
+        "summary": "Play graphics on one or more channels",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/cg-controller/update": {
+      "post": {
+        "summary": "Update graphics on one or more channels",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/cg-controller/take": {
+      "post": {
+        "summary": "Take CG Preview to Program",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/cg/templates": {
+      "get": {
+        "summary": "List CG templates",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/cg/render": {
+      "post": {
+        "summary": "Render/preview CG",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/mam/assets": {
+      "get": {
+        "summary": "Search MAM assets",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Register MAM asset",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/mam/assets/{assetId}/proxy": {
+      "post": {
+        "summary": "Generate proxy",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/mam/assets/{assetId}/archive": {
+      "post": {
+        "summary": "Archive asset",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/ingest/jobs": {
+      "get": {
+        "summary": "List ingest jobs",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create ingest job",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/ingest/jobs/{jobId}/start": {
+      "post": {
+        "summary": "Start ingest job",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/nrcs/rundowns": {
+      "get": {
+        "summary": "List rundowns",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/nrcs/rundowns/{id}/publish": {
+      "post": {
+        "summary": "Publish rundown",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/prompter/{rundownId}/commands": {
+      "post": {
+        "summary": "Prompter command",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/traffic/reconcile": {
+      "post": {
+        "summary": "Traffic/as-run reconciliation",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/monitoring/alarms": {
+      "get": {
+        "summary": "Get alarms",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/ha/nodes": {
+      "get": {
+        "summary": "Get HA nodes",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/ha/failover": {
+      "post": {
+        "summary": "Controlled failover",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "503": {
+            "description": "Module unavailable"
+          }
+        }
+      }
+    }
+  }
+}

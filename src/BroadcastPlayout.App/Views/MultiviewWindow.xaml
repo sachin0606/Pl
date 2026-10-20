@@ -1,0 +1,294 @@
+<Window x:Class="BroadcastPlayout.Views.MultiviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix Multiview" Width="1660" Height="930" MinWidth="1180" MinHeight="700" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize" ShowInTaskbar="True" Icon="pack://application:,,,/Kashtrix.Playout;component/Branding/kashtrix-multiview.ico"
+        Background="{StaticResource Bg0Brush}" Foreground="{StaticResource TextBrush}">
+    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Background="{StaticResource Bg0Brush}">
+        <Grid Background="{StaticResource Bg0Brush}">
+            <Grid.RowDefinitions>
+                <RowDefinition x:Name="TopNavRow" Height="52"/>
+                <RowDefinition x:Name="TopConfidenceRow" Height="220" MinHeight="0"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition x:Name="BottomStatusRow" Height="32"/>
+            </Grid.RowDefinitions>
+
+            <!-- TOP NAVIGATION & CONTROL BAR -->
+            <Border x:Name="TopNavBorder" Grid.Row="0" Background="#0C1116" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="12,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid VerticalAlignment="Center" Margin="0,0,16,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                        <Image Source="pack://application:,,,/Kashtrix.Playout;component/Branding/kashtrix-multiview.png" Width="30" Height="30" Stretch="Uniform"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,0,0">
+                            <TextBlock Text="KASHTRIX MULTIVIEW" FontSize="15" FontWeight="Bold"/>
+                            <TextBlock Text="Broadcast Multi-Source Wall · QC Engine" Foreground="{StaticResource MutedBrush}" FontSize="9"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- TOP NAVBAR MENU -->
+                    <Menu Grid.Column="1" Background="Transparent" Foreground="#F4F6F8" BorderThickness="0" VerticalAlignment="Center">
+                        <MenuItem Header="Wall Presets">
+                            <MenuItem Header="2×2 Monitor Grid (4 Tiles)" Click="LayoutPreset_Click" Tag="2x2"/>
+                            <MenuItem Header="3×3 Monitor Grid (9 Tiles)" Click="LayoutPreset_Click" Tag="3x3"/>
+                            <MenuItem Header="4×4 Standard Wall (16 Tiles)" Click="LayoutPreset_Click" Tag="4x4"/>
+                            <MenuItem Header="1+5 Studio Split (6 Tiles)" Click="LayoutPreset_Click" Tag="1+5"/>
+                            <MenuItem Header="1+7 Master Ingest Wall (8 Tiles)" Click="LayoutPreset_Click" Tag="1+7"/>
+                            <MenuItem Header="5×6 High Density (30 Tiles)" Click="LayoutPreset_Click" Tag="5x6"/>
+                            <MenuItem Header="7×10 Master Wall (70 Tiles)" Click="LayoutPreset_Click" Tag="7x10"/>
+                            <Separator/>
+                            <MenuItem Header="Custom Grid Size..." Click="CustomTileGrid_Click"/>
+                            <MenuItem Header="Save Wall Layout" Click="SaveLayout_Click"/>
+                        </MenuItem>
+                        <MenuItem Header="View">
+                            <MenuItem Header="Fullscreen Wall Mode (F11)" Click="ToggleFullscreenWall_Click" InputGestureText="F11"/>
+                            <MenuItem Header="Inputs Only Wall" Click="ToggleInputsOnly_Click" InputGestureText="Toggle PVW/PGM"/>
+                            <Separator/>
+                            <MenuItem Header="Preset 2×2" Click="LayoutPreset_Click" Tag="2x2"/>
+                            <MenuItem Header="Preset 3×3" Click="LayoutPreset_Click" Tag="3x3"/>
+                            <MenuItem Header="Preset 4×4" Click="LayoutPreset_Click" Tag="4x4"/>
+                        </MenuItem>
+                        <MenuItem Header="Sources &amp; Tools">
+                            <MenuItem Header="Add / Configure Source..." Click="OpenInput_Click"/>
+                            <MenuItem Header="Scan UDP MPTS Programs..." Click="ScanMptsPrograms_Click"/>
+                            <Separator/>
+                            <MenuItem Header="Load Demo Workspace" Click="LoadDemo_Click"/>
+                            <MenuItem Header="Refresh Sources &amp; Wall" Click="Refresh_Click"/>
+                        </MenuItem>
+                        <MenuItem Header="Settings &amp; QC">
+                            <MenuItem Header="Multiview Settings &amp; QC Thresholds..." Click="OpenSettings_Click"/>
+                            <MenuItem Header="Email &amp; SMTP Alerts Setup..." Click="OpenSettings_Click"/>
+                        </MenuItem>
+                    </Menu>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock x:Name="ClockText" FontFamily="Digital-7, DSEG7 Classic, Consolas" FontSize="18" Foreground="#85DE80" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <Button Content="FULLSCREEN (F11)" Click="ToggleFullscreenWall_Click" Style="{StaticResource SmallTool}" Height="26" Margin="2,0,4,0" ToolTip="Toggle Fullscreen Wall Mode (Hides all menus/chrome, shows only source tiles)"/>
+                        <Button Click="Minimize_Click" Style="{StaticResource WindowControlButton}" ToolTip="Minimize"><TextBlock Style="{StaticResource WindowMinimizeGlyph}"/></Button>
+                        <Button Click="Maximize_Click" Style="{StaticResource WindowControlButton}" ToolTip="Maximize / Restore"><TextBlock Style="{StaticResource WindowMaximizeGlyph}"/></Button>
+                        <Button Click="Close_Click" Style="{StaticResource WindowCloseButton}" ToolTip="Close"><TextBlock Style="{StaticResource WindowCloseGlyph}"/></Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- TOP ROW CONFIDENCE MONITORS: PREVIEW (PVW) + PROGRAM (PGM) + SELECTED INPUT + QC ALERTS -->
+            <Grid x:Name="TopConfidencePanel" Grid.Row="1" Margin="8,6,8,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="340"/>
+                    <ColumnDefinition Width="220"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- PREVIEW (PVW) MONITOR (TOP LEFT) -->
+                <Border Grid.Column="0" Style="{StaticResource PanelBorder}" Margin="0,0,4,0">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="26"/><RowDefinition Height="*"/><RowDefinition Height="26"/></Grid.RowDefinitions>
+                        <Grid Background="#120E1D" Margin="0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Border Background="#47266D" Padding="6,2" Margin="4,2"><TextBlock Text="PREVIEW (PVW)" Foreground="#E4D1FA" FontSize="9" FontWeight="Bold"/></Border>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedTile.Name}" Foreground="#B78BE7" FontSize="9" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                        <Grid Grid.Row="1" Background="#020304" ClipToBounds="True">
+                            <Image x:Name="PreviewImage" Stretch="Uniform"/>
+                        </Grid>
+                        <Grid Grid.Row="2" Background="#0C1016">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding PreviewSeekText}" FontFamily="Digital-7, DSEG7 Classic, Consolas" FontSize="11" Foreground="#C89BED" VerticalAlignment="Center" Margin="8,0"/>
+                            <TextBlock Grid.Column="1" Text="CUE BUS" FontSize="8.5" Foreground="#7E8A93" VerticalAlignment="Center" Margin="8,0"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- PROGRAM (PGM) MONITOR (TOP CENTER) -->
+                <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Margin="4,0">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="26"/><RowDefinition Height="*"/><RowDefinition Height="26"/></Grid.RowDefinitions>
+                        <Grid Background="#1D0E11" Margin="0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Border Background="#7B1E2B" Padding="6,2" Margin="4,2"><TextBlock Text="PROGRAM (PGM)" Foreground="#FFF0F2" FontSize="9" FontWeight="Bold"/></Border>
+                            <TextBlock Grid.Column="1" Text="{Binding ChannelName}" Foreground="#FFB0B8" FontSize="9" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                        <Grid Grid.Row="1" Background="#020304" ClipToBounds="True">
+                            <Image x:Name="ProgramImage" Stretch="Uniform"/>
+                        </Grid>
+                        <Grid Grid.Row="2" Background="#0C1016">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding CurrentElapsedText, Mode=OneWay}" FontFamily="Digital-7, DSEG7 Classic, Consolas" FontSize="11" Foreground="#55C878" VerticalAlignment="Center" Margin="8,0"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="6,0" VerticalAlignment="Center">
+                                <Ellipse Width="6" Height="6" Fill="#55C878" Margin="0,0,4,0"/>
+                                <TextBlock Text="ON AIR" FontSize="8.5" Foreground="#55C878" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- SELECTED INPUT DETAIL & QUICK TAKES -->
+                <Border Grid.Column="2" Style="{StaticResource PanelBorder}" Margin="4,0" Padding="6">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="22"/><RowDefinition Height="*"/><RowDefinition Height="30"/></Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="SELECTED INPUT" FontWeight="Bold" FontSize="9.5" Foreground="#D6B7EE" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedTile.Format}" Foreground="{StaticResource AccentBrush}" FontSize="8.5" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Grid Grid.Row="1" Background="#020304" Margin="0,4" ClipToBounds="True">
+                            <Image Source="{Binding SelectedTile.Image}" Stretch="Uniform"/>
+                            <Border Background="#A0000000" VerticalAlignment="Bottom" Padding="4,2">
+                                <TextBlock Text="{Binding SelectedTile.Name}" Foreground="White" FontSize="9.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                        </Grid>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="4"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="TAKE PVW" Click="TakePreview_Click" Background="#331747" BorderBrush="{StaticResource PinkBrush}" FontSize="9"/>
+                            <Button Grid.Column="2" Content="TAKE PGM" Click="TakeProgram_Click" Background="#431416" BorderBrush="{StaticResource OnAirBrush}" FontSize="9"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- SIGNAL QC & ALERT MONITOR -->
+                <Border Grid.Column="3" Style="{StaticResource PanelBorder}" Margin="4,0,0,0" Padding="8">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <TextBlock Text="SIGNAL MONITOR / ALERTS" Style="{StaticResource PanelTitle}" FontSize="9.5"/>
+                        <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,4">
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Black Frame Detector" FontSize="8.5" Foreground="#98A2A9"/>
+                                <TextBlock Grid.Column="1" Text="ACTIVE · OK" FontSize="8.5" Foreground="#55C878" FontWeight="SemiBold"/>
+                            </Grid>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Video Freeze Guard" FontSize="8.5" Foreground="#98A2A9"/>
+                                <TextBlock Grid.Column="1" Text="ACTIVE · OK" FontSize="8.5" Foreground="#55C878" FontWeight="SemiBold"/>
+                            </Grid>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="SCTE-35 Splice Monitor" FontSize="8.5" Foreground="#98A2A9"/>
+                                <TextBlock Grid.Column="1" Text="ARMED · SCAN" FontSize="8.5" Foreground="#E5B64C" FontWeight="SemiBold"/>
+                            </Grid>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="Audio Silence Detection" FontSize="8.5" Foreground="#98A2A9"/>
+                                <TextBlock Grid.Column="1" Text="NOMINAL" FontSize="8.5" Foreground="#55C878" FontWeight="SemiBold"/>
+                            </Grid>
+                        </StackPanel>
+                        <Button Grid.Row="2" Content="ADD / CONFIG SOURCE" Click="OpenInput_Click" Style="{StaticResource SmallTool}" Height="24" FontSize="9"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- MAIN MULTIVIEW TILE GRID -->
+            <Border Grid.Row="2" Style="{StaticResource PanelBorder}" Margin="8,2,8,4" Padding="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Tiles}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="{Binding DataContext.GridColumns, RelativeSource={RelativeSource AncestorType=Window}}"
+                                             Rows="{Binding DataContext.GridRows, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="3" MinHeight="110" Background="#030507" BorderBrush="#352646" BorderThickness="1" CornerRadius="2"
+                                        MouseLeftButtonDown="Tile_Click" MouseRightButtonDown="Tile_RightClick" Tag="{Binding}" Cursor="Hand">
+                                    <Border.ContextMenu>
+                                        <ContextMenu Background="#121519" BorderBrush="{StaticResource AccentBrush}" Foreground="#F4F6F8">
+                                            <MenuItem Header="Fullscreen Audio &amp; Video Inspection" Click="TileFullscreenMonitor_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Take Preview (PVW)" Click="TakePreview_Click"/>
+                                            <MenuItem Header="Take Program (PGM)" Click="TakeProgram_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Configure Source..." Click="OpenInput_Click"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="20"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="18"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- TILE HEADER -->
+                                        <Grid Background="#0B1118">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Index, StringFormat=00}" Foreground="{StaticResource PinkBrush}" FontWeight="Bold" FontSize="8.5" Margin="4,0" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" FontSize="8.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Status}" Foreground="{StaticResource GoodBrush}" FontSize="7.5" Margin="4,0" VerticalAlignment="Center"/>
+                                        </Grid>
+
+                                        <!-- TILE VIDEO SURFACE WITH ALERTS OVERLAY -->
+                                        <Grid Grid.Row="1" Background="#020304" ClipToBounds="True">
+                                            <Image Source="{Binding Image, Mode=OneWay}" Stretch="Uniform"/>
+                                            <TextBlock Text="{Binding OverlayText, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#E8EDF2" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="4"/>
+                                            <TextBlock Text="{Binding Name, Mode=OneWay}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Foreground="#9AA6AF" Background="#90000000" FontSize="7.5" Padding="3,1" Margin="2"/>
+
+                                            <!-- SIGNAL ALERT BADGES -->
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="3">
+                                                <Border Background="#D32F2F" CornerRadius="1" Padding="3,1" Margin="1,0" Visibility="{Binding BlackFrameAlertVisibility, FallbackValue=Collapsed}">
+                                                    <TextBlock Text="BLK" Foreground="White" FontSize="6.5" FontWeight="Bold"/>
+                                                </Border>
+                                                <Border Background="#E65100" CornerRadius="1" Padding="3,1" Margin="1,0" Visibility="{Binding FreezeAlertVisibility, FallbackValue=Collapsed}">
+                                                    <TextBlock Text="FRZ" Foreground="White" FontSize="6.5" FontWeight="Bold"/>
+                                                </Border>
+                                                <Border Background="#FF8F00" CornerRadius="1" Padding="3,1" Margin="1,0" Visibility="{Binding Scte35AlertVisibility, FallbackValue=Collapsed}">
+                                                    <TextBlock Text="35" Foreground="Black" FontSize="6.5" FontWeight="Bold"/>
+                                                </Border>
+                                                <Border Background="#7B1FA2" CornerRadius="1" Padding="3,1" Margin="1,0" Visibility="{Binding AudioSilenceAlertVisibility, FallbackValue=Collapsed}">
+                                                    <TextBlock Text="AUD" Foreground="White" FontSize="6.5" FontWeight="Bold"/>
+                                                </Border>
+                                                <Border Background="#B71C1C" CornerRadius="1" Padding="3,1" Margin="1,0" Visibility="{Binding SignalLossAlertVisibility, FallbackValue=Collapsed}">
+                                                    <TextBlock Text="SIG" Foreground="White" FontSize="6.5" FontWeight="Bold"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- RIGHT-SIDE VERTICAL AUDIO BAR -->
+                                            <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="8" Background="#A0000000" BorderBrush="#202A32" BorderThickness="1,0,0,0" Padding="1">
+                                                <ProgressBar Orientation="Vertical" Maximum="1" Value="{Binding AudioLeft, Mode=OneWay}" Foreground="{StaticResource MeterGradientBrush}" VerticalAlignment="Stretch"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- TILE FOOTER -->
+                                        <Grid Grid.Row="2" Background="#090E14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Format}" Foreground="{StaticResource MutedBrush}" FontSize="7.5" Margin="4,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding AudioLeftDbfsText}" Foreground="#9AA6AF" FontFamily="Consolas" FontSize="6.5" Margin="0,0,4,0"/>
+                                                <ProgressBar Width="20" Height="3" Maximum="1" Value="{Binding AudioLeft, Mode=OneWay}" Foreground="{StaticResource MeterGradientBrush}"/>
+                                                <ProgressBar Width="20" Height="3" Maximum="1" Value="{Binding AudioRight, Mode=OneWay}" Foreground="{StaticResource MeterGradientBrush}" Margin="2,0,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- BOTTOM STATUS BAR -->
+            <Border x:Name="BottomStatusBar" Grid.Row="3" Background="#080D12" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
+                <Grid Margin="12,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock x:Name="FooterStatus" Text="Kashtrix Multiview · Master Wall · Top PVW/PGM Monitors · NDI + SDI/DirectShow + MPTS UDP · Live QC Alerts" Foreground="{StaticResource MutedBrush}" FontSize="9" VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="GRID: " Foreground="#8A949C" FontSize="9"/>
+                        <TextBlock x:Name="CurrentGridText" Text="4×4 (16 Tiles)" Foreground="#D6B7EE" FontSize="9" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                        <TextBlock Text="SOURCES: " Foreground="#8A949C" FontSize="9"/>
+                        <TextBlock Text="{Binding Tiles.Count, Mode=OneWay}" Foreground="#55C878" FontSize="9" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

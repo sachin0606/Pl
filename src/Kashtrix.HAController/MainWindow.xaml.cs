@@ -1,0 +1,25 @@
+using System;
+using System.Linq;
+using System.Windows;
+using System.ComponentModel;
+using BroadcastPlayout.Professional;
+using BroadcastPlayout.Services;
+namespace Kashtrix.HAController;
+public partial class MainWindow:Window
+{
+ private readonly HaCoordinatorService _coordinator=new(); private readonly System.Windows.Threading.DispatcherTimer _timer=new(){Interval=TimeSpan.FromMilliseconds(500)}; private readonly BroadcastPlayout.Models.AppSettings _appSettings; private FileSystemWatcher? _controlWatcher;
+ public MainWindow(){InitializeComponent();_appSettings=SettingsStore.Load();Start();StartControlWatcher();_timer.Tick+=(_,_)=>Refresh();_timer.Start();}
+ private void Start(){try{_coordinator.Start(_appSettings.ProfessionalBroadcast);StatusText.Text=$"Coordinator listening {_appSettings.ProfessionalBroadcast.HaMulticastAddress}:{_appSettings.ProfessionalBroadcast.HaHeartbeatPort} · control {_appSettings.ProfessionalBroadcast.HaControlPort}";}catch(Exception ex){StatusText.Text="HA start failed: "+ex.Message;}}
+ private void Refresh(){var selected=(NodeGrid.SelectedItem as HaNodeSnapshot)?.NodeId;var channel=(NodeGrid.SelectedItem as HaNodeSnapshot)?.ChannelId;var rows=_coordinator.Snapshot();HaControlBus.PublishSnapshot(rows);NodeGrid.ItemsSource=rows;if(selected is not null)NodeGrid.SelectedItem=rows.FirstOrDefault(x=>x.NodeId==selected&&x.ChannelId==channel);StatusText.Text=$"{rows.Count} heartbeat(s) · {rows.Select(x=>x.ChannelId).Distinct(StringComparer.OrdinalIgnoreCase).Count()} channel(s) · coordinator {(CoordinatorCheck.IsChecked==true?"ON":"MONITOR ONLY")}";}
+ private void Refresh_Click(object sender,RoutedEventArgs e)=>Refresh();
+ private void CoordinatorCheck_Click(object sender,RoutedEventArgs e){if(CoordinatorCheck.IsChecked==true){_coordinator.Stop();Start();}else _coordinator.Stop();}
+ private void ForceActive_Click(object sender,RoutedEventArgs e){if(NodeGrid.SelectedItem is not HaNodeSnapshot n)return;EnsureCoordinator();_coordinator.ForceActive(n.ChannelId,n.NodeId,TimeSpan.FromMinutes(10),"MANUAL FORCE ACTIVE");StatusText.Text=$"Forced {n.ChannelId} to {n.NodeId} for 10 minutes.";}
+ private void Release_Click(object sender,RoutedEventArgs e){if(NodeGrid.SelectedItem is not HaNodeSnapshot n)return;EnsureCoordinator();_coordinator.Release(n.ChannelId);StatusText.Text=$"{n.ChannelId} released to automatic N+M election.";}
+ private async void Inhibit_Click(object sender,RoutedEventArgs e){if(NodeGrid.SelectedItem is not HaNodeSnapshot n)return;var r=await PlatformControlBus.SubmitAndWaitAsync(new PlatformControlCommand{ChannelId=n.ChannelId,Action="output_arm",Parameters=new(){{"armed","false"}}},TimeSpan.FromSeconds(2));StatusText.Text=r.Message;}
+ private async void Arm_Click(object sender,RoutedEventArgs e){if(NodeGrid.SelectedItem is not HaNodeSnapshot n)return;var r=await PlatformControlBus.SubmitAndWaitAsync(new PlatformControlCommand{ChannelId=n.ChannelId,Action="output_arm",Parameters=new(){{"armed","true"}}},TimeSpan.FromSeconds(2));StatusText.Text=r.Message;}
+ private void EnsureCoordinator(){if(CoordinatorCheck.IsChecked!=true){CoordinatorCheck.IsChecked=true;Start();}}
+ private void StartControlWatcher(){Directory.CreateDirectory(HaControlBus.Inbox);_controlWatcher?.Dispose();_controlWatcher=new FileSystemWatcher(HaControlBus.Inbox,"*.json"){NotifyFilter=NotifyFilters.FileName|NotifyFilters.CreationTime|NotifyFilters.LastWrite,EnableRaisingEvents=true};_controlWatcher.Created+=(_,e)=>QueueControl(e.FullPath);_controlWatcher.Renamed+=(_,e)=>QueueControl(e.FullPath);foreach(var file in Directory.EnumerateFiles(HaControlBus.Inbox,"*.json"))QueueControl(file);}
+ private void QueueControl(string path){_=Task.Run(async()=>{for(var i=0;i<8;i++){if(!File.Exists(path))return;if(HaControlBus.TryConsume(path,out var command)&&command is not null){Dispatcher.Invoke(()=>ExecuteControl(command));return;}await Task.Delay(35);}});}
+ private void ExecuteControl(HaControlCommand command){try{EnsureCoordinator();var action=(command.Action??string.Empty).Trim().ToLowerInvariant();if(action=="force_active"){if(string.IsNullOrWhiteSpace(command.ChannelId)||string.IsNullOrWhiteSpace(command.NodeId))throw new InvalidOperationException("channelId and nodeId are required.");_coordinator.ForceActive(command.ChannelId,command.NodeId,TimeSpan.FromSeconds(Math.Clamp(command.DurationSeconds,5,86400)),command.Reason);HaControlBus.Complete(command,true,"OK",$"{command.ChannelId} forced active on {command.NodeId}.");}else if(action=="release"){if(string.IsNullOrWhiteSpace(command.ChannelId))throw new InvalidOperationException("channelId is required.");_coordinator.Release(command.ChannelId);HaControlBus.Complete(command,true,"OK",$"{command.ChannelId} released to automatic election.");}else HaControlBus.Complete(command,false,"UNSUPPORTED_ACTION","Unsupported HA action: "+command.Action);}catch(Exception ex){HaControlBus.Complete(command,false,"COMMAND_FAILED",ex.GetBaseException().Message);}}
+ private void Window_Closing(object? sender,CancelEventArgs e){_timer.Stop();try{_controlWatcher?.Dispose();}catch{} _coordinator.Dispose();}
+}

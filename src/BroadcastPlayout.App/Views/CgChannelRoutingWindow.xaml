@@ -1,0 +1,45 @@
+<Window x:Class="BroadcastPlayout.Views.CgChannelRoutingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix CG Channel Routing" Width="960" Height="660" MinWidth="820" MinHeight="560"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResizeWithGrip">
+    <Grid Background="{StaticResource Bg0Brush}">
+        <Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="*"/><RowDefinition Height="64"/></Grid.RowDefinitions>
+        <Border Background="#080C12" BorderBrush="#422253" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="14,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center"><TextBlock Text="CG CHANNEL ROUTING" FontSize="19" FontWeight="Bold"/><TextBlock Text="Select exact client targets for this graphic" Foreground="{StaticResource MutedBrush}" FontSize="10"/></StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><Button Click="Minimize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMinimizeGlyph}"/></Button><Button Click="Maximize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMaximizeGlyph}"/></Button><Button Click="Close_Click" Style="{StaticResource WindowCloseButton}"><TextBlock Style="{StaticResource WindowCloseGlyph}"/></Button></StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="12"><Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="10"/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <Border Style="{StaticResource PanelBorder}" Padding="12"><StackPanel>
+                <TextBlock Text="CONTROLLER CONNECTION" FontWeight="Bold"/>
+                <TextBlock Text="Host" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><TextBox x:Name="HostBox"/>
+                <TextBlock Text="Port" Style="{StaticResource SectionCaption}" Margin="0,10,0,3"/><TextBox x:Name="PortBox"/>
+                <Button Content="CONNECT / REFRESH" Click="Refresh_Click" Margin="0,12,0,0" BorderBrush="{StaticResource AccentBrush}"/>
+                <Button Content="LOAD DEMO TARGETS" Click="Demo_Click" Style="{StaticResource DemoActionButton}" Margin="0,5,0,0"/>
+                <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                <TextBlock Text="GRAPHIC" Style="{StaticResource SectionCaption}" Margin="0,18,0,3"/><TextBlock x:Name="GraphicNameText" Foreground="{StaticResource PinkBrush}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                <Border Style="{StaticResource PanelBorder}" Padding="10" Margin="0,16,0,0"><StackPanel><TextBlock Text="TARGETS SELECTED" Style="{StaticResource SectionCaption}"/><TextBlock Text="{Binding SelectedCount}" Foreground="{StaticResource PinkBrush}" FontSize="28" FontWeight="Bold"/></StackPanel></Border>
+            </StackPanel></Border>
+
+            <Border Grid.Column="2" Style="{StaticResource PanelBorder}" Padding="8"><Grid><Grid.RowDefinitions><RowDefinition Height="44"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel VerticalAlignment="Center"><TextBlock Text="CONNECTED PLAYOUT CLIENTS" FontWeight="Bold"/><TextBlock Text="Target selection is preserved when the list refreshes" Foreground="{StaticResource MutedBrush}" FontSize="9"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="SELECT ALL" Click="SelectAll_Click"/><Button Content="CLEAR" Click="Clear_Click"/></StackPanel></Grid>
+                <ListBox Grid.Row="1" x:Name="ChannelsList" ItemsSource="{Binding Channels}"><ListBox.ItemTemplate><DataTemplate><Border Padding="9" BorderBrush="#39254A" BorderThickness="0,0,0,1"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition/><ColumnDefinition Width="150"/><ColumnDefinition Width="85"/></Grid.ColumnDefinitions>
+                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="✓" Foreground="{StaticResource PinkBrush}"/>
+                    <StackPanel Grid.Column="1"><TextBlock Text="{Binding Status.ChannelName}" FontWeight="SemiBold"/><TextBlock Text="{Binding Status.ChannelId}" Foreground="{StaticResource MutedBrush}" FontSize="9"/></StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding Status.ProgramTitle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="3" Text="{Binding Status.State}" Foreground="{StaticResource GoodBrush}" VerticalAlignment="Center"/>
+                </Grid></Border></DataTemplate></ListBox.ItemTemplate></ListBox>
+            </Grid></Border>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="12,0,12,8"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="150"/><ColumnDefinition Width="150"/><ColumnDefinition Width="150"/></Grid.ColumnDefinitions>
+            <TextBlock Text="The same graphic can be sent to multiple selected channels. Each channel remains independently addressable for different graphics." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            <Button Grid.Column="1" Content="PREVIEW" Click="Preview_Click" Background="#321445" BorderBrush="{StaticResource AccentBrush}"/>
+            <Button Grid.Column="2" Content="PLAY NOW" Click="Play_Click" Background="#5C167A" BorderBrush="{StaticResource PinkBrush}" FontWeight="Bold"/>
+            <Button Grid.Column="3" Content="STOP CG" Click="Stop_Click" Background="#431416" BorderBrush="{StaticResource OnAirBrush}"/>
+        </Grid>
+    </Grid>
+</Window>

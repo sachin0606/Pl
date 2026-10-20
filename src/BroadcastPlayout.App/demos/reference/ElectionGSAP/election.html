@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <title>TV Today Nepal – Flash News Only</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @font-face { font-family: 'Suvadin'; src: url('suvadin.ttf') format('truetype'); }
+
+        body {
+            font-family: 'Mukta', sans-serif;
+            height: 1080px;
+            width: 1920px;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        /* hide other sections */
+        .header, .main-layout, .tally-container { display: none; }
+
+        footer.footer-flash {
+            margin-bottom: 30px;
+            height: 115px;
+            display: flex;
+            background: #fff;
+            position: relative;
+            width: 100%;
+        }
+
+        /* Permanent compact left title */
+        .flash-title-part {
+            background: linear-gradient(90deg, #330000, #800000);
+            color: #fff;
+            padding: 0 50px;
+            display: none; /* controlled by JS */
+            align-items: center;
+            position: relative;
+            z-index: 500;
+            min-width: 450px;
+        }
+
+        #flashTitle {
+            font-size: 3.5rem;
+            display: inline-block;
+margin-left: 40px;
+            /* Removed white-space: nowrap; to allow stacking */
+            font-weight: 800;
+            line-height: 1; /* Added to keep lines tightly stacked */
+        }
+        .title-char { display: inline-block; transform-origin: center center; will-change: transform, opacity; }
+        .title-char.space { width: 0.5em; }
+
+        .arrow-container { display: flex; position: absolute; right: 15px; gap: 2px; }
+        .arrow-item { width: 40px; height: 40px; fill: #fff; opacity: 0; }
+
+        /* headline area – initially hidden (scaleX 0) */
+        .flipper-stack {
+            position: absolute;
+            inset: 0;
+            left: 350px;
+            z-index: 100;
+            perspective: 2000px;
+            transform-origin: left center;
+            transform: scaleX(0);
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        .flip-layer {
+            position: absolute; inset: 0;
+            background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+            transform-origin: top center;
+            display: flex; align-items: center; padding-left: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backface-visibility: hidden;
+        }
+
+        .headline-wrapper {
+            position: absolute;
+            left: 350px;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 450;
+            transform-origin: left center;
+            transform: scaleX(0);
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        #headlineText {
+            font-family: 'Suvadin', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            color: #111;
+            position: relative;
+            transform: translateX(-100%);
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        /* Overlay styles */
+        .overlay-wrap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 1200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: linear-gradient(90deg, #330000, #800000);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+        .overlay-title {
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 4.5rem;
+            white-space: nowrap;
+            letter-spacing: 0.15em;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+            padding: 0 20px;
+            transition: none;
+        }
+        .overlay-title .title-char {
+            display: inline-block;
+            transform-origin: center center;
+        }
+
+        .overlay-arrows {
+            position: absolute;
+            right: 18px;
+            display: flex;
+            gap: 6px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .overlay-arrows .arrow-item {
+            width: 40px;
+            height: 40px;
+            fill: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<footer class="footer-flash">
+    <div class="flash-title-part" id="permanentTitlePart">
+        <h2 id="flashTitle">ELECTION<br>UPDATE</h2>
+        <div class="arrow-container" id="arrowSet"></div>
+    </div>
+
+    <div class="flipper-stack">
+        <div class="flip-layer" style="z-index:3;"></div>
+        <div class="flip-layer" style="z-index:2;"></div>
+        <div class="flip-layer" style="z-index:1;"></div>
+    </div>
+
+    <div class="headline-wrapper">
+        <div id="headlineText">डाटा लोड हुँदैछ...</div>
+    </div>
+</footer>
+
+<script>
+(function() {
+    const FLASH_API = 'https://quantumcg.simulcast.com.np/api_data/data.php?content=live_news&token=1e2bf41da9ae34bcf284419b448d52ea&company=2';
+    const FLASH_INTERVAL = 6000; // Time between news items (6 seconds)
+    const REFRESH_INTERVAL = 30000; // Refresh news from API every 30 seconds
+    const COMPACT_WIDTH = 450;
+
+    let flashNews = [];
+    let currentIdx = 0;
+    let isAnimating = false; // Flag to prevent overlapping animations
+    let isRefreshing = false;
+
+    // Helper: split text into character spans
+    function splitToChars(el) {
+        if (!el) return [];
+        // Using innerText preserves \n characters
+        const txt = el.innerText || '';
+        const chars = txt.split('');
+        el.innerHTML = '';
+        chars.forEach(ch => {
+            // Check for newline to insert <br> tag instead of span
+            if (ch === '\n') {
+                el.appendChild(document.createElement('br'));
+            } else {
+                const span = document.createElement('span');
+                span.className = 'title-char' + (ch === ' ' ? ' space' : '');
+                span.innerText = ch === ' ' ? '\u00A0' : ch;
+                el.appendChild(span);
+            }
+        });
+        return el.querySelectorAll('.title-char');
+    }
+
+    // Overlay title animation (elastic, y-based)
+    function animateOverlayTitle(el) {
+        const chars = el.querySelectorAll('.title-char');
+        if (!chars.length) return;
+        return gsap.fromTo(chars,
+            { y: 60, opacity: 0, rotationX: 60 },
+            {
+                y: 0,
+                opacity: 1,
+                rotationX: 0,
+                stagger: 0.05,
+                duration: 0.6,
+                ease: "elastic.out(1, 0.6)",
+                force3D: true
+            }
+        );
+    }
+
+    // Compact title staggered zoom
+    function animateCompactTitle(el) {
+        const chars = el.querySelectorAll('.title-char');
+        if (!chars.length) return;
+        return gsap.fromTo(chars,
+            { scale: 0.3, rotation: -10, opacity: 0 },
+            { scale: 1, rotation: 0, opacity: 1, duration: 0.45, stagger: 0.02, ease: "back.out(2)", force3D: true }
+        );
+    }
+
+    // Hide permanent title and kill its animations
+    function hidePermanentTitle() {
+        const perm = document.getElementById('permanentTitlePart');
+        if (perm) {
+            gsap.killTweensOf(perm);
+            gsap.killTweensOf('#permanentTitlePart .arrow-item');
+            perm.style.display = 'none';
+        }
+    }
+
+    // Show permanent title, split its text, and prepare arrows
+    function showPermanentTitle() {
+        const perm = document.getElementById('permanentTitlePart');
+        if (!perm) return;
+        perm.style.display = 'flex';
+        const permTitleEl = document.getElementById('flashTitle');
+        // Replaced space with \n to create the multiline effect in JS
+        permTitleEl.innerText = 'ELECTION\nUPDATE';
+        splitToChars(permTitleEl);
+        const permArrows = document.getElementById('arrowSet');
+        permArrows.innerHTML = `<svg class="arrow-item" viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" fill="#fff"/></svg>
+                                <svg class="arrow-item" viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" fill="#fff"/></svg>
+                                <svg class="arrow-item" viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" fill="#fff"/></svg>`;
+    }
+
+    // Start infinite arrow animation
+    function startArrowAnimation() {
+        return gsap.to("#permanentTitlePart .arrow-item", {
+            opacity: 1,
+            x: 10,
+            stagger: 0.15,
+            duration: 0.5,
+            repeat: -1,
+            ease: "power2.inOut",
+            force3D: true
+        });
+    }
+
+    // Overlay creation & animation (with font size shrink)
+    function animateOverlayCycle() {
+        return new Promise(resolve => {
+            const footer = document.querySelector('.footer-flash');
+            if (!footer) return resolve();
+
+            hidePermanentTitle();
+
+            // Hide flipper and headline during overlay
+            gsap.set(".flipper-stack, .headline-wrapper", { scaleX: 0, opacity: 0 });
+
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay-wrap';
+            overlay.style.width = '100%';
+            overlay.style.transform = 'translateX(100%)';
+
+            const bigTitle = document.createElement('div');
+            bigTitle.className = 'overlay-title';
+            // Kept this one on a single line per your request!
+            bigTitle.innerText = 'ELECTION UPDATE';
+            overlay.appendChild(bigTitle);
+
+            // Optional arrows (hidden)
+            const overlayArrows = document.createElement('div');
+            overlayArrows.className = 'overlay-arrows';
+            overlayArrows.innerHTML = `<svg class="arrow-item" viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" fill="#fff"/></svg>
+                                       <svg class="arrow-item" viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" fill="#fff"/></svg>
+                                       <svg class="arrow-item" viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" fill="#fff"/></svg>`;
+            overlay.appendChild(overlayArrows);
+
+            footer.appendChild(overlay);
+
+            splitToChars(bigTitle);
+
+            const tl = gsap.timeline({ 
+                defaults: { force3D: true },
+                onComplete: () => {
+                    resolve();
+                }
+            });
+
+            tl.to(overlay, { x: '0%', duration: 0.6, ease: 'power3.out' }, 0);
+            tl.add(() => animateOverlayTitle(bigTitle), 0.1);
+            tl.to({}, { duration: 0.7 }); // hold
+
+            // Shrink width and simultaneously reduce font size & letter spacing
+            tl.to(overlay, {
+                width: COMPACT_WIDTH,
+                duration: 0.6,
+                ease: 'power2.inOut'
+            }, "+=0");
+
+            // Animate bigTitle font size and letter spacing to match compact version
+            tl.to(bigTitle, {
+                fontSize: "1.6rem",
+                letterSpacing: "0em",
+                duration: 0.6,
+                ease: 'power2.inOut',
+                onComplete: () => {
+                    // After shrink, show permanent title and animate it
+                    showPermanentTitle();
+                    animateCompactTitle(document.getElementById('flashTitle'));
+                    startArrowAnimation();
+
+                    // Animate in flipper stack and headline wrapper
+                    gsap.to(".flipper-stack", {
+                        scaleX: 1,
+                        opacity: 1,
+                        duration: 0.5,
+                        ease: "power2.out",
+                        force3D: true
+                    });
+                    gsap.to(".headline-wrapper", {
+                        scaleX: 1,
+                        opacity: 1,
+                        duration: 0.5,
+                        ease: "power2.out",
+                        force3D: true
+                    });
+
+                    overlay.remove();
+                }
+            }, "<");
+        });
+    }
+
+    // Load flash news from API
+    async function loadFlashNews() {
+        try {
+            const res = await fetch(FLASH_API, { cache: "no-store" });
+            if (!res.ok) throw new Error('Flash API failed: ' + res.status);
+            const data = await res.json();
+
+            let newNews = [];
+            
+            // Handle the specific API format: [{"live_news": "text"}, ...]
+            if (Array.isArray(data) && data.length) {
+                newNews = data
+                    .map(item => {
+                        if (!item) return null;
+                        if (typeof item === 'string') return item;
+                        if (item.live_news && typeof item.live_news === 'string') return item.live_news;
+                        for (const key in item) {
+                            if (typeof item[key] === 'string') return item[key];
+                        }
+                        return null;
+                    })
+                    .filter(text => text && text.trim() !== '');
+            }
+            
+            if (newNews.length > 0) {
+                const newsChanged = JSON.stringify(newNews) !== JSON.stringify(flashNews);
+                if (newsChanged) {
+                    console.log('News updated! New items:', newNews.length);
+                    flashNews = newNews;
+                    return true;
+                }
+            }
+            
+            if (flashNews.length === 0) {
+                flashNews = ["डेटा उपलब्ध छैन"];
+            }
+            
+            return false;
+        } catch (err) {
+            console.error('Error loading flash news:', err);
+            if (flashNews.length === 0) {
+                flashNews = ["FLASH लोड गर्दा त्रुटि"];
+            }
+            return false;
+        }
+    }
+
+    // Refresh news and handle transition
+    async function refreshNews() {
+        if (isRefreshing) return;
+        isRefreshing = true;
+        
+        try {
+            const newsChanged = await loadFlashNews();
+            
+            if (newsChanged && flashNews.length > 0) {
+                // Wait for any ongoing animation to complete
+                while (isAnimating) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                
+                // Kill any ongoing animations
+                gsap.killTweensOf("*");
+                
+                // Reset to first news with overlay
+                currentIdx = 0;
+                document.getElementById('headlineText').innerText = flashNews[0];
+                gsap.set("#headlineText", { x: "-100%", opacity: 0 });
+                
+                // Play overlay and show first news
+                await animateOverlayCycle();
+                await animateFlashUpdate(flashNews[0]);
+            }
+        } finally {
+            isRefreshing = false;
+        }
+    }
+
+    // Flip layers animation
+    function animateFlipLayers() {
+        const layers = document.querySelectorAll('.flip-layer');
+        return gsap.timeline()
+            .to(layers, { rotationX: 90, stagger: 0.1, duration: 0.4, ease: "power2.in", force3D: true })
+            .to(layers, { rotationX: 0, stagger: -0.1, duration: 0.7, ease: "back.out(1.5)", force3D: true });
+    }
+
+    // Headline update with slide-in (for normal transitions)
+    function animateFlashUpdate(newText) {
+        return new Promise(resolve => {
+            const textEl = document.getElementById('headlineText');
+            if (!textEl) return resolve();
+
+            isAnimating = true;
+
+            const masterTl = gsap.timeline({ 
+                defaults: { force3D: true },
+                onComplete: () => {
+                    isAnimating = false;
+                    resolve();
+                }
+            });
+
+            masterTl.add(animateFlipLayers(), 0);
+
+            masterTl.to(textEl, { x: "100%", opacity: 0, duration: 0.3, ease: "power2.inOut" }, 0);
+
+            masterTl.add(() => {
+                textEl.innerText = newText;
+                gsap.set(textEl, { x: "-100%", opacity: 0 });
+            }, "+=0.05");
+
+            masterTl.to(textEl, { x: "0%", opacity: 1, duration: 0.3, ease: "power2.inOut" });
+
+            masterTl.add(() => {
+                const permTitleEl = document.getElementById('flashTitle');
+                if (permTitleEl && document.getElementById('permanentTitlePart').style.display === 'flex') {
+                    animateCompactTitle(permTitleEl);
+                }
+            }, "+=0.1");
+        });
+    }
+
+    // Special animation for the last news: slide out only (no slide in)
+    function animateSlideOutOnly() {
+        return new Promise(resolve => {
+            const textEl = document.getElementById('headlineText');
+            if (!textEl) return resolve();
+
+            isAnimating = true;
+
+            const tl = gsap.timeline({ 
+                defaults: { force3D: true },
+                onComplete: () => {
+                    isAnimating = false;
+                    resolve();
+                }
+            });
+
+            tl.add(animateFlipLayers(), 0);
+            tl.to(textEl, { x: "100%", opacity: 0, duration: 0.3, ease: "power2.inOut" }, 0);
+            // No slide-in
+        });
+    }
+
+    // Main loop: overlay after full cycle with proper timing
+    async function runCycleLoop() {
+        while (true) {
+            await new Promise(r => setTimeout(r, FLASH_INTERVAL));
+            
+            if (!flashNews.length || isRefreshing) continue;
+
+            let nextIdx = (currentIdx + 1) % flashNews.length;
+
+            if (nextIdx === 0) {
+                // Wait for any ongoing animation to complete (should be none, but just in case)
+                while (isAnimating) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                
+                // First, slide out the current last news completely
+                await animateSlideOutOnly();
+                
+                // Small delay to ensure settled
+                await new Promise(r => setTimeout(r, 200));
+                
+                // Play overlay
+                await animateOverlayCycle();
+                
+                // Update to first news
+                currentIdx = 0;
+                await animateFlashUpdate(flashNews[0]);
+            } else {
+                // Just show next news
+                currentIdx = nextIdx;
+                await animateFlashUpdate(flashNews[currentIdx]);
+            }
+        }
+    }
+
+    // Start everything
+    async function start() {
+        // Ensure flipper and headline are hidden initially
+        gsap.set(".flipper-stack, .headline-wrapper", { scaleX: 0, opacity: 0 });
+        gsap.set("#headlineText", { x: "-100%", opacity: 0 });
+
+        hidePermanentTitle();
+
+        // Initial load
+        await loadFlashNews();
+
+        if (flashNews.length > 0) {
+            document.getElementById('headlineText').innerText = flashNews[0];
+
+            // Play initial overlay
+            await animateOverlayCycle();
+
+            // After overlay, show first news
+            await animateFlashUpdate(flashNews[0]);
+
+            currentIdx = 0;
+        }
+
+        // Start the cycle loop
+        runCycleLoop();
+
+        // Set up periodic refresh
+        setInterval(refreshNews, REFRESH_INTERVAL);
+    }
+
+    start();
+})();
+</script>
+</body>
+</html>

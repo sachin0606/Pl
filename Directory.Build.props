@@ -1,0 +1,49 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      WPF markup compilation creates a generated project named *_wpftmp.csproj. The generated
+      project imports Directory.Build.props after WPF has injected the parent project's assembly
+      and intermediate-path properties. Detect it FIRST so repository defaults never overwrite
+      those injected values with the random temporary project name.
+    -->
+    <IsWpfTempProject>false</IsWpfTempProject>
+    <IsWpfTempProject Condition="$(MSBuildProjectFile.EndsWith('_wpftmp.csproj'))">true</IsWpfTempProject>
+    <IsWpfTempProject Condition="$(MSBuildProjectFile.EndsWith('_wpftmp.vbproj'))">true</IsWpfTempProject>
+    <IsWpfTempProject Condition="$(MSBuildProjectFile.EndsWith('.tmp_proj'))">true</IsWpfTempProject>
+
+    <!--
+      Keep normal Kashtrix obj/bin paths short and outside the extracted source tree. Do not
+      recalculate these paths for WPF temporary projects: GenerateTemporaryTargetAssembly already
+      injects the correct parent paths into those projects.
+    -->
+    <!-- FIX31: one-click setup injects a unique session root through KASHTRIX_BUILD_ROOT. -->
+    <KashtrixBuildRoot Condition="'$(KashtrixBuildRoot)' == '' and '$(KASHTRIX_BUILD_ROOT)' != ''">$(KASHTRIX_BUILD_ROOT)</KashtrixBuildRoot>
+    <!-- Use active session if recorded in active-build-root.txt -->
+    <KashtrixBuildRoot Condition="'$(KashtrixBuildRoot)' == '' and Exists('$(LOCALAPPDATA)\KashtrixPlayout\active-build-root.txt')">$([System.IO.File]::ReadAllText('$(LOCALAPPDATA)\KashtrixPlayout\active-build-root.txt').Trim())</KashtrixBuildRoot>
+    <!-- Single unified build root across one-click setup, active sessions, and direct builds -->
+    <KashtrixBuildRoot Condition="'$(KashtrixBuildRoot)' == ''">$(LOCALAPPDATA)\KashtrixPlayout\BuildSessions\active</KashtrixBuildRoot>
+    <BaseIntermediateOutputPath Condition="'$(IsWpfTempProject)' != 'true'">$(KashtrixBuildRoot)\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseOutputPath Condition="'$(IsWpfTempProject)' != 'true'">$(KashtrixBuildRoot)\bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <!-- External cache may be deleted while Visual Studio still thinks a dependency is current. -->
+    <DisableFastUpToDateCheck Condition="'$(IsWpfTempProject)' != 'true'">true</DisableFastUpToDateCheck>
+
+    <!-- Exact-name gate: generated WPF temporary project names never match this list. -->
+    <IsKashtrixWrapperProject>false</IsKashtrixWrapperProject>
+    <IsKashtrixWrapperProject Condition="'$(MSBuildProjectName)' == 'Kashtrix.CGEditor' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.CGController' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.Scheduler' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.PlaylistEditor' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.Settings' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.Multiview' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.ChannelController' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.FileManager' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.QCController' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.IngestServer' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.MAM' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.NRCS' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.Prompter' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.HAController' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.ApiGateway' or
+                                         '$(MSBuildProjectName)' == 'Kashtrix.OutputEngine'">true</IsKashtrixWrapperProject>
+  </PropertyGroup>
+</Project>

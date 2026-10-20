@@ -1,0 +1,11 @@
+THIRD-PARTY COMPONENTS
+======================
+
+This source project restores third-party dependencies through NuGet and vendor SDK setup scripts.
+
+- FFmpeg.AutoGen bindings — package license applies; FFmpeg native binaries are installed separately by Setup-FFmpeg9.ps1.
+- NAudio — package license applies.
+- Microsoft.Data.Sqlite — package license applies.
+- CefSharp / Chromium Embedded Framework — CefSharp.OffScreen.NETCore is restored from NuGet; its BSD-style license and the Chromium/CEF notices included by the package/runtime apply.
+- NDI — the user-supplied NDI runtime and its accompanying license notice are kept together in native\ndi.
+- Blackmagic DeckLink — not redistributed; use the official Desktop Video SDK and generate interop locally.

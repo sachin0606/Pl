@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kashtrix Command Envelope",
+  "type": "object",
+  "required": [
+    "v",
+    "id",
+    "type",
+    "module",
+    "action"
+  ],
+  "properties": {
+    "v": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ts": {
+      "type": "string"
+    },
+    "type": {
+      "const": "command"
+    },
+    "module": {
+      "type": "string"
+    },
+    "channelId": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "params": {
+      "type": "object"
+    }
+  }
+}

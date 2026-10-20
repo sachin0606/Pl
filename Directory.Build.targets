@@ -1,0 +1,104 @@
+<Project>
+  <!--
+    Wrapper applications reference BroadcastPlayout.App for shared views/services. After the
+    external cache has been cleaned, make sure that shared target assembly exists before wrapper
+    project references resolve. IMPORTANT: WPF also creates *_wpftmp.csproj while compiling XAML.
+    Never execute this recursive MSBuild target inside those generated projects, otherwise the
+    temporary assembly can recursively request the parent WPF build and MSBuild reports MSB4006
+    around GenerateTemporaryTargetAssembly.
+  -->
+  <Target Name="EnsureKashtrixSharedProjectBuilt"
+          BeforeTargets="ResolveProjectReferences"
+          Condition="'$(DesignTimeBuild)' != 'true' and
+                     '$(IsKashtrixWrapperProject)' == 'true' and
+                     '$(IsWpfTempProject)' != 'true' and
+                     '$(KashtrixSharedBuildInProgress)' != 'true' and
+                     !Exists('$(KashtrixBuildRoot)\bin\BroadcastPlayout.App\x64\$(Configuration)\net10.0-windows10.0.26100.0\win-x64\Kashtrix.Playout.dll') and
+                     Exists('$(MSBuildThisFileDirectory)src\BroadcastPlayout.App\BroadcastPlayout.App.csproj')">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)src\BroadcastPlayout.App\BroadcastPlayout.App.csproj"
+             Targets="Restore;Build"
+             BuildInParallel="false"
+             Properties="Configuration=$(Configuration);Platform=x64;KashtrixSharedBuildInProgress=true;KashtrixBuildRoot=$(KashtrixBuildRoot)" />
+  </Target>
+  <Target Name="PruneUnneededWrapperOutputs"
+          Condition="'$(IsKashtrixWrapperProject)' == 'true' and '$(IsWpfTempProject)' != 'true'"
+          BeforeTargets="CopyFilesToOutputDirectory;_CopyOutOfDateSourceItemsToOutputDirectory;_CopyFilesMarkedCopyLocal">
+    <Message Importance="high" Text=">>> PRUNING TARGET EXECUTING FOR $(MSBuildProjectName) (items count: @(ReferenceCopyLocalPaths->Count))" />
+    <ItemGroup>
+      <!-- Remove duplicate Playout executable and config from satellite wrappers -->
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)"
+                              Condition="'%(ReferenceCopyLocalPaths.Filename)' == 'Kashtrix.Playout' and ('%(ReferenceCopyLocalPaths.Extension)' == '.exe' or '%(ReferenceCopyLocalPaths.Extension)' == '.deps.json' or '%(ReferenceCopyLocalPaths.Extension)' == '.runtimeconfig.json' or '%(ReferenceCopyLocalPaths.Extension)' == '.pdb')" />
+    </ItemGroup>
+
+    <!-- demos folder must ONLY be present in Kashtrix.CGEditor -->
+    <ItemGroup Condition="'$(MSBuildProjectName)' != 'Kashtrix.CGEditor'">
+      <_SourceItemsToCopyToOutputDirectory Remove="@(_SourceItemsToCopyToOutputDirectory)"
+                                           Condition="$([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectory.TargetPath)').ToLower().StartsWith('demos\')) or $([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectory.Identity)').ToLower().Contains('\demos\'))" />
+      <_SourceItemsToCopyToOutputDirectoryAlways Remove="@(_SourceItemsToCopyToOutputDirectoryAlways)"
+                                                 Condition="$([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectoryAlways.TargetPath)').ToLower().StartsWith('demos\')) or $([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectoryAlways.Identity)').ToLower().Contains('\demos\'))" />
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)"
+                               Condition="$([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').ToLower().Contains('\demos\'))" />
+    </ItemGroup>
+
+    <!-- Satellite apps that do not require FFmpeg/NDI video pipelines or yt-dlp -->
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'Kashtrix.Settings' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.Scheduler' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.ChannelController' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.FileManager' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.PlaylistEditor' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.CGController' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.HAController' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.Prompter' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.ApiGateway' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.NRCS' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.OutputEngine'">
+      <_SourceItemsToCopyToOutputDirectory Remove="@(_SourceItemsToCopyToOutputDirectory)"
+                                           Condition="'%(_SourceItemsToCopyToOutputDirectory.Filename)' != 'e_sqlite3' and ($([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectory.TargetPath)').ToLower().StartsWith('native\')) or $([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectory.Identity)').ToLower().Contains('\native\ffmpeg\')) or $([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectory.Identity)').ToLower().Contains('\native\ndi\')) or '%(_SourceItemsToCopyToOutputDirectory.Filename)' == 'yt-dlp')" />
+      <_SourceItemsToCopyToOutputDirectoryAlways Remove="@(_SourceItemsToCopyToOutputDirectoryAlways)"
+                                                 Condition="'%(_SourceItemsToCopyToOutputDirectoryAlways.Filename)' != 'e_sqlite3' and ($([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectoryAlways.TargetPath)').ToLower().StartsWith('native\')) or $([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectoryAlways.Identity)').ToLower().Contains('\native\ffmpeg\')) or $([System.String]::Copy('%(_SourceItemsToCopyToOutputDirectoryAlways.Identity)').ToLower().Contains('\native\ndi\')) or '%(_SourceItemsToCopyToOutputDirectoryAlways.Filename)' == 'yt-dlp')" />
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)"
+                               Condition="'%(ReferenceCopyLocalPaths.Filename)' != 'e_sqlite3' and ($([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').ToLower().Contains('\native\ffmpeg\')) or $([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').ToLower().Contains('\native\ndi\')) or '%(ReferenceCopyLocalPaths.Filename)' == 'yt-dlp')" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CleanSatelliteAppOutputDirectory"
+          Condition="'$(IsKashtrixWrapperProject)' == 'true' and '$(IsWpfTempProject)' != 'true'"
+          AfterTargets="CopyFilesToOutputDirectory;Build">
+    <!-- 1. Remove duplicate Playout executables from all satellite applications -->
+    <Delete Files="$(TargetDir)Kashtrix.Playout.exe;$(TargetDir)Kashtrix.Playout.deps.json;$(TargetDir)Kashtrix.Playout.runtimeconfig.json;$(TargetDir)Kashtrix.Playout.pdb"
+            TreatErrorsAsWarnings="true" />
+
+    <!-- 2. Remove demos folder from all applications except Kashtrix.CGEditor -->
+    <RemoveDir Directories="$(TargetDir)demos"
+               Condition="'$(MSBuildProjectName)' != 'Kashtrix.CGEditor' and Exists('$(TargetDir)demos')" />
+
+    <!-- 3. Remove native ffmpeg/ndi and yt-dlp from satellite apps that do not process video/NDI -->
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'Kashtrix.Settings' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.Scheduler' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.ChannelController' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.FileManager' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.PlaylistEditor' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.CGController' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.CGEditor' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.HAController' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.Prompter' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.ApiGateway' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.NRCS' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.QCController' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.MAM' or
+                          '$(MSBuildProjectName)' == 'Kashtrix.OutputEngine'">
+      <FilesToDelete Include="$(TargetDir)yt-dlp.exe" />
+      <DirectoriesToDelete Include="$(TargetDir)native" />
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)" TreatErrorsAsWarnings="true" />
+    <RemoveDir Directories="@(DirectoriesToDelete)" />
+
+    <!-- 4. Remove CefSharp browser binaries from all satellite applications (only Playout uses CefSharp HTML5 CG) -->
+    <ItemGroup>
+      <CefSharpFiles Include="$(TargetDir)CefSharp*.dll;$(TargetDir)CefSharp*.pak;$(TargetDir)libcef.dll;$(TargetDir)chrome_elf.dll;$(TargetDir)d3dcompiler_47.dll;$(TargetDir)icudtl.dat;$(TargetDir)snapshot_blob.bin;$(TargetDir)v8_context_snapshot.bin;$(TargetDir)vk_swiftshader*.dll;$(TargetDir)vulkan*.dll;$(TargetDir)*.pak" />
+      <CefSharpDirs Include="$(TargetDir)locales;$(TargetDir)swiftshader" />
+    </ItemGroup>
+    <Delete Files="@(CefSharpFiles)" TreatErrorsAsWarnings="true" />
+    <RemoveDir Directories="@(CefSharpDirs)" />
+  </Target>
+</Project>

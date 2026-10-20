@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kashtrix Response Envelope",
+  "type": "object",
+  "required": [
+    "v",
+    "id",
+    "type",
+    "ok"
+  ],
+  "properties": {
+    "v": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "const": "response"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "data": {}
+  }
+}

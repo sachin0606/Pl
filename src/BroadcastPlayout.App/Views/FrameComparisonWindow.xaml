@@ -1,0 +1,143 @@
+<Window x:Class="BroadcastPlayout.Views.FrameComparisonWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OPERATIONS WITH FRAMES · OPTICAL AD CUE COMPARISON"
+        Width="880" Height="680" MinWidth="750" MinHeight="550"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResize"
+        Background="{StaticResource Bg0Brush}" Foreground="{StaticResource TextBrush}" SnapsToDevicePixels="True">
+
+    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Background="{StaticResource Bg0Brush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="52"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Chrome Header -->
+            <Border Grid.Row="0" Background="{StaticResource Bg1Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="12,0,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="🎯" FontSize="14" Foreground="{StaticResource AccentBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="OPERATIONS WITH FRAMES · OPTICAL CUE RECOGNITION" FontWeight="Bold" FontSize="12.5" Foreground="{StaticResource TextBrush}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="—" Width="30" Height="24" Click="Minimize_Click" Style="{StaticResource ChromeButton}" ToolTip="Minimize"/>
+                        <Button Content="✕" Width="30" Height="24" Click="Close_Click" Style="{StaticResource ChromeButton}" Foreground="#FF8989" ToolTip="Close"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Top Option Header Bar with Main Toggle & Confirm -->
+            <Border Grid.Row="1" Background="#181122" BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox x:Name="OperationsWithFramesCheck" Content="Operations With FRAMES" IsChecked="True"
+                              FontSize="14" FontWeight="Bold" Foreground="#B78BE7" VerticalAlignment="Center" Cursor="Hand"/>
+
+                    <Button Grid.Column="1" Content="CONFIRM CHANGES" Click="Confirm_Click"
+                            Width="160" Height="32" Background="#3E2359" BorderBrush="{StaticResource AccentBrush}" Foreground="#FFFFFF" FontWeight="Bold" Cursor="Hand"/>
+                </Grid>
+            </Border>
+
+            <!-- Settings Body -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="20,16">
+                    <TextBlock Text="FRAME COMPARISON OPTIONS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,16"/>
+
+                    <!-- Compare Frames on LIVE / URL -->
+                    <StackPanel Margin="0,0,0,14">
+                        <CheckBox x:Name="CompareOnLiveCheck" Content="Compare Frames on LIVE" IsChecked="True" Foreground="{StaticResource TextBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="CompareOnUrlCheck" Content="Compare Frames on URL" IsChecked="True" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                    </StackPanel>
+
+                    <!-- Compare Type -->
+                    <Grid Margin="0,6,0,14">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Compare Type:" Foreground="{StaticResource MutedBrush}" FontSize="11.5" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <RadioButton x:Name="RecognizeBothRadio" Content="Recognize Both OUT and IN Frames" IsChecked="True" Foreground="{StaticResource TextBrush}" Margin="0,0,24,0"/>
+                            <RadioButton x:Name="RecognizeOnlyOutRadio" Content="Recognize Only OUT Frame" Foreground="{StaticResource TextBrush}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Compare Method -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Compare Method:" Foreground="{StaticResource MutedBrush}" FontSize="11.5" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <RadioButton x:Name="CcoeffNormedRadio" Content="CcoeffNormed" IsChecked="True" Foreground="{StaticResource TextBrush}" Margin="0,0,24,0"/>
+                            <RadioButton x:Name="SqdiffNormedRadio" Content="SqdiffNormed" Foreground="{StaticResource TextBrush}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Compare Precision OUT -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Compare Precision&#x0a;OUT" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" x:Name="PrecisionOutText" Text="82" Height="26" HorizontalContentAlignment="Center" Background="{StaticResource Bg1Brush}" Foreground="#FFFFFF" BorderBrush="{StaticResource LineBrush}" VerticalContentAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="%" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </Grid>
+
+                    <!-- Compare Precision IN -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Compare Precision IN" Foreground="{StaticResource MutedBrush}" FontSize="11.5" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" x:Name="PrecisionInText" Text="88" Height="26" HorizontalContentAlignment="Center" Background="{StaticResource Bg1Brush}" Foreground="#FFFFFF" BorderBrush="{StaticResource LineBrush}" VerticalContentAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="%" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </Grid>
+
+                    <!-- Time Out When OUT Frame is Found -->
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Time Out When OUT&#x0a;Frame is Found" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" x:Name="TimeoutOutText" Text="20" Height="26" HorizontalContentAlignment="Center" Background="{StaticResource Bg1Brush}" Foreground="#FFFFFF" BorderBrush="{StaticResource LineBrush}" VerticalContentAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="seconds" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </Grid>
+
+                    <!-- Wait second after first -->
+                    <CheckBox x:Name="WaitSecondAfterFirstCheck" Content="After Finding First, Always Wait For Second (Turn on Emergency Return if this option is On)"
+                              IsChecked="True" Foreground="{StaticResource TextBrush}" FontSize="11.5" Margin="0,0,0,16"/>
+
+                    <!-- Emergency Time / Maximum break duration -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Emergency Time /&#x0a;Maximum break duration:" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" x:Name="EmergencyTimeText" Text="5" Height="26" HorizontalContentAlignment="Center" Background="{StaticResource Bg1Brush}" Foreground="#FFFFFF" BorderBrush="{StaticResource LineBrush}" VerticalContentAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="minutes (set this time to higher value than real break duration to&#x0a;add exact number of files from block. 0 will add all files from block)"
+                                   Foreground="{StaticResource MutedBrush}" FontSize="10.5" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </Grid>
+
+                    <!-- Emergency Return -->
+                    <StackPanel Margin="0,10,0,0">
+                        <CheckBox x:Name="EmergencyReturnCheck" Content="Emergency Return" IsChecked="True" Foreground="{StaticResource TextBrush}" FontSize="12" Margin="0,0,0,4"/>
+                        <TextBlock Text="This will force LIVE / URL to go back to program. Always put this emergency&#x0a;time to be higher than commercial block duration"
+                                   Foreground="{StaticResource MutedBrush}" FontSize="10.5" Margin="22,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Bottom Action Footer -->
+            <Border Grid.Row="3" Background="{StaticResource Bg1Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="16,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Optical slate &amp; cue frame pattern matching active on live program bus" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                    <Button Grid.Column="1" Content="CONFIRM CHANGES" Click="Confirm_Click"
+                            Width="160" Height="32" Background="#3E2359" BorderBrush="{StaticResource AccentBrush}" Foreground="#FFFFFF" FontWeight="Bold" Cursor="Hand"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

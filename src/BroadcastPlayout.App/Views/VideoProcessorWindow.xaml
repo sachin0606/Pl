@@ -1,0 +1,68 @@
+<Window x:Class="BroadcastPlayout.Views.VideoProcessorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix Video Processor" Width="1180" Height="760" MinWidth="980" MinHeight="650"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResizeWithGrip"
+        Icon="pack://application:,,,/Kashtrix.Playout;component/Branding/kashtrix-playout.ico">
+    <Grid Background="{StaticResource Bg0Brush}">
+        <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="*"/><RowDefinition Height="44"/></Grid.RowDefinitions>
+        <Border Background="#101216" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="14,0"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Image Source="pack://application:,,,/Kashtrix.Playout;component/Branding/kashtrix-playout.png" Width="34" Height="34" Stretch="Uniform" Margin="0,0,10,0"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="FINAL OUTPUT VIDEO PROCESSOR" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Program color correction · final output after CG/logo · all destinations" Foreground="{StaticResource MutedBrush}" FontSize="9.5"/></StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center"><Button Content="RESET" Click="Reset_Click"/><Button Click="Minimize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMinimizeGlyph}"/></Button><Button Click="Maximize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMaximizeGlyph}"/></Button><Button Click="Close_Click" Style="{StaticResource WindowCloseButton}"><TextBlock Style="{StaticResource WindowCloseGlyph}"/></Button></StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="14"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <Border Style="{StaticResource PanelBorder}" Padding="16">
+                        <StackPanel>
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="MASTER" FontSize="17" FontWeight="SemiBold"/><CheckBox Grid.Column="1" Content="ENABLE PROCESSING" IsChecked="{Binding EnableVideoProcessing}" Style="{StaticResource ToggleSwitch}"/></Grid>
+                            <TextBlock Text="Applied after CG/logo compositing, before Program monitor, NDI, SDI, Multiview and Virtual Output." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,14"/>
+                            <TextBlock Text="{Binding VideoProcessingStatus}" Foreground="#C99AEA" FontFamily="Consolas"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource PanelBorder}" Padding="16" Margin="0,12,0,0"><StackPanel>
+                        <TextBlock Text="TONAL" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="BRIGHTNESS" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="-100" Maximum="100" Value="{Binding VideoBrightness, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoBrightness, StringFormat={}{0:+#;-#;0}}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="CONTRAST" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="200" Value="{Binding VideoContrast, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoContrast, StringFormat={}{0}%}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="GAMMA" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="0.1" Maximum="4" Value="{Binding VideoGamma, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoGamma, StringFormat={}{0:0.00}}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="EXPOSURE" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="-4" Maximum="4" Value="{Binding VideoExposureStops, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoExposureStops, StringFormat={}{0:+0.0;-0.0;0.0} EV}" HorizontalAlignment="Right"/></Grid>
+                    </StackPanel></Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <Border Style="{StaticResource PanelBorder}" Padding="16"><StackPanel>
+                        <TextBlock Text="COLOR" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="SATURATION" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="200" Value="{Binding VideoSaturation, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoSaturation, StringFormat={}{0}%}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="HUE" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="-180" Maximum="180" Value="{Binding VideoHueDegrees, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoHueDegrees, StringFormat={}{0}°}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="TEMPERATURE" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="-100" Maximum="100" Value="{Binding VideoTemperature, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoTemperature, StringFormat={}{0:+#;-#;0}}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="TINT" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="-100" Maximum="100" Value="{Binding VideoTint, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoTint, StringFormat={}{0:+#;-#;0}}" HorizontalAlignment="Right"/></Grid>
+                    </StackPanel></Border>
+                    <Border Style="{StaticResource PanelBorder}" Padding="16" Margin="0,12,0,0"><StackPanel>
+                        <TextBlock Text="LEVELS / DETAIL" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="BLACK LEVEL" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="-100" Maximum="100" Value="{Binding VideoBlackLevel, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoBlackLevel, StringFormat={}{0:+#;-#;0}}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="WHITE LEVEL" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="-100" Maximum="100" Value="{Binding VideoWhiteLevel, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoWhiteLevel, StringFormat={}{0:+#;-#;0}}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="SHARPNESS" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="100" Value="{Binding VideoSharpness, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoSharpness, StringFormat={}{0}%}" HorizontalAlignment="Right"/></Grid>
+                    </StackPanel></Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="4">
+                    <Border Style="{StaticResource PanelBorder}" Padding="16"><StackPanel>
+                        <TextBlock Text="RGB GAINS" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="RED" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="200" Value="{Binding VideoRedGainPercent, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoRedGainPercent, StringFormat={}{0}%}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="GREEN" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="200" Value="{Binding VideoGreenGainPercent, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoGreenGainPercent, StringFormat={}{0}%}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="BLUE" Style="{StaticResource SectionCaption}" Margin="0,12,0,3"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><Slider Minimum="0" Maximum="200" Value="{Binding VideoBlueGainPercent, Mode=TwoWay}"/><TextBlock Grid.Column="1" Text="{Binding VideoBlueGainPercent, StringFormat={}{0}%}" HorizontalAlignment="Right"/></Grid>
+                    </StackPanel></Border>
+                    <Border Style="{StaticResource PanelBorder}" Padding="16" Margin="0,12,0,0"><StackPanel>
+                        <TextBlock Text="SAFE WORKFLOW" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="Processing is bypassed by default. Enable it only after setting your desired values. RESET returns every control to neutral without changing output routing." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,9,0,0"/>
+                        <Button Content="RESET ALL TO NEUTRAL" Click="Reset_Click" Margin="0,16,0,0" Height="42"/>
+                    </StackPanel></Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+        <Border Grid.Row="2" Background="#0E1013" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"><Grid Margin="14,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Changes are live and persisted to the channel settings / preset." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="{Binding VideoProcessingStatus}" Foreground="#C99AEA" VerticalAlignment="Center"/></Grid></Border>
+    </Grid>
+</Window>

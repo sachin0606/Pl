@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{width:100%;height:100%;margin:0;background:transparent;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#fff}
+:root{--blue:#245cff;--red:#e7395c;--gold:#ffc94d;--ink:#08111c;--glass:rgba(7,15,26,.94)}
+.wrap{position:absolute;left:74px;right:74px;bottom:56px;height:228px;display:grid;grid-template-columns:190px 1fr 390px;gap:0;filter:drop-shadow(0 16px 28px rgba(0,0,0,.35));transform:translateY(125%);opacity:0;animation:strapIn .72s cubic-bezier(.16,.82,.2,1) .08s forwards}
+.badge{background:linear-gradient(145deg,#5d2dff,#9a3cff);display:flex;flex-direction:column;justify-content:center;padding:0 28px;clip-path:polygon(0 0,100% 0,88% 100%,0 100%)}
+.badge b{font-size:27px;letter-spacing:2px}.badge span{font-size:16px;color:#d7c9ff;margin-top:8px}
+.main{background:linear-gradient(90deg,rgba(7,15,26,.97),rgba(12,24,42,.94));position:relative;overflow:hidden;padding:30px 34px 24px}
+.main:before{content:"";position:absolute;left:0;top:0;width:9px;height:100%;background:linear-gradient(var(--blue),#53d1ff)}
+.kicker{font-weight:900;font-size:19px;letter-spacing:1.6px;color:#8eb7ff;opacity:0;animation:fadeUp .45s .55s forwards}
+.race{font-size:48px;font-weight:900;line-height:1.05;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;animation:fadeUp .5s .66s forwards}
+.sub{font-size:20px;color:#c6d1df;margin-top:10px;opacity:0;animation:fadeUp .45s .78s forwards}
+.results{background:#f4f7fb;color:#0e1724;display:grid;grid-template-rows:1fr 1fr;padding:18px 24px 16px;gap:12px;transform:translateX(110%);animation:resultsIn .55s .34s cubic-bezier(.2,.82,.22,1) forwards}
+.row{display:grid;grid-template-columns:14px 1fr auto;align-items:center;gap:14px;border-bottom:1px solid #dde3eb}.row:last-child{border-bottom:0}.swatch{width:12px;height:56px;border-radius:5px}.blue{background:var(--blue)}.red{background:var(--red)}
+.name{font-weight:800;font-size:20px}.party{font-size:13px;color:#75808f;margin-top:2px}.pct{font-size:38px;font-weight:900;min-width:110px;text-align:right}.pct small{font-size:15px;color:#77818d}
+.progress{position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(255,255,255,.09)}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#53d1ff,#8d57ff,#ff4f9b);animation:progress 7s linear .85s forwards}
+.live{position:absolute;top:32px;right:32px;border-radius:999px;padding:7px 13px;background:#e92d4f;font-weight:900;font-size:14px;letter-spacing:1px;animation:pulse 1.4s infinite}
+@keyframes strapIn{to{transform:translateY(0);opacity:1}}@keyframes resultsIn{to{transform:translateX(0)}}@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}@keyframes progress{to{width:100%}}@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(233,45,79,.13)}}
+</style>
+<script>
+const set=(id,v)=>{if(v!==undefined&&v!==null)document.getElementById(id).textContent=v};
+window.Kashtrix={update(d){set('race',d.race);set('sub',d.sub);set('c1',d.candidate1);set('p1',d.party1);set('v1',d.percent1);set('c2',d.candidate2);set('p2',d.party2);set('v2',d.percent2);set('precincts',d.precincts);}};
+window.addEventListener('kashtrix-data',e=>window.Kashtrix.update(e.detail||{}));
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge"><b>ELECTION</b><span id="precincts">68% REPORTING</span></div>
+  <div class="main"><div class="live">LIVE RESULTS</div><div class="kicker">NATIONAL ELECTION CENTER</div><div id="race" class="race">CENTRAL DISTRICT</div><div id="sub" class="sub">Seat call · verified newsroom data</div><div class="progress"><i></i></div></div>
+  <div class="results"><div class="row"><span class="swatch blue"></span><div><div id="c1" class="name">ALEX MORGAN</div><div id="p1" class="party">UNITY PARTY</div></div><div id="v1" class="pct">52.4<small>%</small></div></div><div class="row"><span class="swatch red"></span><div><div id="c2" class="name">JORDAN LEE</div><div id="p2" class="party">REFORM PARTY</div></div><div id="v2" class="pct">47.6<small>%</small></div></div></div>
+</div>
+</body></html>

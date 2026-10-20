@@ -1,0 +1,109 @@
+<Window x:Class="BroadcastPlayout.Views.InputSourceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix Input Sources" Width="1220" Height="760" MinWidth="1080" MinHeight="680"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResizeWithGrip" ShowInTaskbar="True"
+        Background="{StaticResource Bg0Brush}" Foreground="{StaticResource TextBrush}">
+    <Grid Margin="14">
+        <Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="*"/><RowDefinition Height="52"/></Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="#080D12" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="10,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="320"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center"><TextBlock Text="KASHTRIX INPUT SOURCES" FontSize="20" FontWeight="Bold"/><TextBlock Text="URL · NDI · capture card · webcam · desktop · custom input" Foreground="{StaticResource MutedBrush}" FontSize="10"/></StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="EVENT TITLE" Style="{StaticResource SectionCaption}"/><TextBox x:Name="TitleBox" Text="Live Input" Margin="0,3,0,0"/></StackPanel><StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0"><Button Content="DEMO SOURCE" Click="LoadDemo_Click" Style="{StaticResource DemoActionButton}"/><Button Click="Minimize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMinimizeGlyph}"/></Button><Button Click="Maximize_Click" Style="{StaticResource WindowControlButton}"><TextBlock Style="{StaticResource WindowMaximizeGlyph}"/></Button><Button Click="Close_Click" Style="{StaticResource WindowCloseButton}"><TextBlock Style="{StaticResource WindowCloseGlyph}"/></Button></StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="0,12,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="620"/><ColumnDefinition Width="10"/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource PanelBorder}">
+                <TabControl x:Name="SourceTabs" SelectionChanged="SourceTabs_SelectionChanged">
+                    <TabItem Header="URL / STREAM">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="16">
+                            <TextBlock Text="URL / STREAM ADDRESS" Style="{StaticResource SectionCaption}"/>
+                            <TextBox x:Name="UrlBox" Margin="0,5,0,12" Text="rtsp://" TextChanged="UrlBox_TextChanged" LostFocus="PreviewField_Changed" ToolTip="RTSP, RTMP, HLS/HTTP, SRT, UDP and other supported network URLs"/>
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="14"/><ColumnDefinition Width="180"/><ColumnDefinition Width="14"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <CheckBox x:Name="UrlLiveCheck" Content="LIVE SOURCE" IsChecked="True" VerticalAlignment="Center" Click="PreviewField_Changed"/>
+                                <StackPanel Grid.Column="2"><TextBlock Text="EVENT DURATION" Style="{StaticResource SectionCaption}"/><TextBox x:Name="UrlDurationBox" Text="01:00:00" Margin="0,4,0,0"/></StackPanel>
+                                <StackPanel Grid.Column="4"><TextBlock Text="SOURCE TYPE (OPTIONAL)" Style="{StaticResource SectionCaption}"/><TextBox x:Name="UrlFormatBox" Margin="0,4,0,0" LostFocus="PreviewField_Changed"/></StackPanel>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0"><Button Content="RESOLVE WEB / YOUTUBE" Click="ResolveWebUrl_Click"/><Button Content="PROBE VOD" Click="ProbeUrl_Click"/><Button Content="START PREVIEW" Click="StartPreview_Click" BorderBrush="{StaticResource AccentBrush}"/><Button Content="STOP PREVIEW" Click="StopPreview_Click"/></StackPanel>
+                            <TextBlock x:Name="UrlProbeStatus" Foreground="{StaticResource MutedBrush}" Margin="0,12,0,0" TextWrapping="Wrap" Text="Direct: RTMP · RTSP · UDP · SRT · HLS · HTTP(S). Web pages such as YouTube are resolved through bundled yt-dlp before the media engine opens them."/>
+                        </StackPanel></ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="CAPTURE DEVICE / CARD">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="16">
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="150"/></Grid.ColumnDefinitions><TextBlock Text="WINDOWS CAPTURE DEVICES" FontWeight="SemiBold" VerticalAlignment="Center"/><Button Grid.Column="1" Content="REFRESH DEVICES" Click="RefreshDevices_Click"/></Grid>
+                            <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="VIDEO DEVICE" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="VideoDeviceBox" IsEditable="True" Margin="0,4,0,0" SelectionChanged="CaptureDevice_Changed"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="AUDIO DEVICE (OPTIONAL)" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="AudioDeviceBox" IsEditable="True" Margin="0,4,0,0" SelectionChanged="CaptureDevice_Changed"/></StackPanel>
+                            </Grid>
+                            <Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="RESOLUTION" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="CaptureResolutionBox" SelectedIndex="0" Margin="0,4,0,0" SelectionChanged="CaptureDevice_Changed"><ComboBoxItem Content="AUTO / DEVICE DEFAULT"/><ComboBoxItem Content="3840x2160"/><ComboBoxItem Content="1920x1080"/><ComboBoxItem Content="1280x720"/><ComboBoxItem Content="720x576"/></ComboBox></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="FPS" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="CaptureFpsBox" SelectedIndex="0" Margin="0,4,0,0" SelectionChanged="CaptureDevice_Changed"><ComboBoxItem Content="AUTO"/><ComboBoxItem Content="23.976"/><ComboBoxItem Content="25"/><ComboBoxItem Content="29.97"/><ComboBoxItem Content="50"/><ComboBoxItem Content="59.94"/><ComboBoxItem Content="60"/></ComboBox></StackPanel>
+                                <StackPanel Grid.Column="4"><TextBlock Text="EVENT DURATION" Style="{StaticResource SectionCaption}"/><TextBox x:Name="CaptureDurationBox" Text="01:00:00" Margin="0,4,0,0"/></StackPanel>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0"><Button Content="START PREVIEW" Click="StartPreview_Click" BorderBrush="{StaticResource AccentBrush}"/><Button Content="STOP PREVIEW" Click="StopPreview_Click"/></StackPanel>
+                            <TextBlock x:Name="DeviceStatus" Foreground="{StaticResource AccentBrush}" Margin="0,12,0,0" TextWrapping="Wrap"/>
+                        </StackPanel></ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="NDI">
+                        <StackPanel Margin="16">
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="140"/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="NDI NETWORK SOURCES" FontWeight="SemiBold"/><TextBlock Text="Discovery refreshes every 10 seconds by default." Foreground="{StaticResource MutedBrush}" FontSize="9" Margin="0,3,0,0"/></StackPanel>
+                                <Button Grid.Column="1" Content="SCAN NOW" Click="ScanNdi_Click"/>
+                            </Grid>
+                            <TextBlock Text="SOURCE" Style="{StaticResource SectionCaption}" Margin="0,14,0,0"/>
+                            <ComboBox x:Name="NdiSourceBox" DisplayMemberPath="Name" IsEditable="False" Margin="0,4,0,0" SelectionChanged="NdiSource_Changed"/>
+                            <Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="SCAN WINDOW" Style="{StaticResource SectionCaption}"/><TextBlock Text="10 seconds" FontSize="13" Margin="0,5,0,0"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="EVENT DURATION" Style="{StaticResource SectionCaption}"/><TextBox x:Name="NdiDurationBox" Text="01:00:00" Margin="0,4,0,0"/></StackPanel>
+                            </Grid>
+                            <TextBlock x:Name="NdiStatusText" Text="Waiting for NDI scan…" Foreground="{StaticResource AccentBrush}" Margin="0,14,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </TabItem>
+
+                    <TabItem Header="SCREEN / DESKTOP">
+                        <StackPanel Margin="16">
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="CAPTURE FPS" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="ScreenFpsBox" SelectedIndex="2" Margin="0,4,0,0" SelectionChanged="PreviewField_Changed"><ComboBoxItem Content="25"/><ComboBoxItem Content="30"/><ComboBoxItem Content="50"/><ComboBoxItem Content="60"/></ComboBox><TextBlock Text="Windows desktop capture uses the Kashtrix live-input engine." Foreground="{StaticResource MutedBrush}" Margin="0,12,0,0" TextWrapping="Wrap"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="EVENT DURATION" Style="{StaticResource SectionCaption}"/><TextBox x:Name="ScreenDurationBox" Text="01:00:00" Margin="0,4,0,0"/><CheckBox x:Name="DrawMouseCheck" Content="Capture mouse cursor" IsChecked="True" Margin="0,12,0,0" Click="PreviewField_Changed"/></StackPanel>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,16,0,0"><Button Content="START PREVIEW" Click="StartPreview_Click" BorderBrush="{StaticResource AccentBrush}"/><Button Content="STOP PREVIEW" Click="StopPreview_Click"/></StackPanel>
+                        </StackPanel>
+                    </TabItem>
+
+                    <TabItem Header="CUSTOM INPUT">
+                        <StackPanel Margin="16">
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="14"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="SOURCE DRIVER (OPTIONAL)" Style="{StaticResource SectionCaption}"/><TextBox x:Name="CustomFormatBox" Text="" Margin="0,4,0,0" LostFocus="PreviewField_Changed"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="SOURCE ADDRESS" Style="{StaticResource SectionCaption}"/><TextBox x:Name="CustomSourceBox" Margin="0,4,0,0" LostFocus="PreviewField_Changed"/></StackPanel>
+                            </Grid>
+                            <TextBlock Text="ADVANCED SOURCE OPTIONS" Style="{StaticResource SectionCaption}" Margin="0,14,0,3"/><TextBox x:Name="CustomOptionsBox" Text="" ToolTip="Semicolon separated key=value options" LostFocus="PreviewField_Changed"/>
+                            <Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="180"/><ColumnDefinition/></Grid.ColumnDefinitions><CheckBox x:Name="CustomLiveCheck" Content="LIVE SOURCE" IsChecked="True" VerticalAlignment="Center" Click="PreviewField_Changed"/><StackPanel Grid.Column="1"><TextBlock Text="EVENT DURATION" Style="{StaticResource SectionCaption}"/><TextBox x:Name="CustomDurationBox" Text="01:00:00" Margin="0,4,0,0"/></StackPanel></Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,16,0,0"><Button Content="START PREVIEW" Click="StartPreview_Click" BorderBrush="{StaticResource AccentBrush}"/><Button Content="STOP PREVIEW" Click="StopPreview_Click"/></StackPanel>
+                        </StackPanel>
+                    </TabItem>
+                </TabControl>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource PanelBorder}">
+                <Grid><Grid.RowDefinitions><RowDefinition Height="42"/><RowDefinition Height="*"/><RowDefinition Height="60"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Border Style="{StaticResource PanelHeader}"><Grid><TextBlock Text="LIVE SOURCE PREVIEW" FontWeight="Bold"/><StackPanel HorizontalAlignment="Right" Orientation="Horizontal"><Ellipse x:Name="PreviewLed" Width="8" Height="8" Fill="#5A6570" Margin="0,0,6,0"/><TextBlock x:Name="PreviewStateText" Text="IDLE" Foreground="{StaticResource MutedBrush}"/></StackPanel></Grid></Border>
+                    <Grid Grid.Row="1" Background="#020304" Margin="8"><Image x:Name="InputPreviewImage" Stretch="Uniform"/><TextBlock x:Name="PreviewPlaceholder" Text="SELECT A SOURCE\nPreview keeps running while this window is open" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/></Grid>
+                    <Grid Grid.Row="2" Margin="12,4"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="PREVIEW AUDIO" Style="{StaticResource SectionCaption}"/><Grid Margin="0,6,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="18"/><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="L" Foreground="{StaticResource MutedBrush}"/><ProgressBar Grid.Column="1" x:Name="PreviewAudioL" Maximum="1" Height="7" Foreground="{StaticResource MeterGradientBrush}"/><TextBlock Grid.Column="2" Text="R" Foreground="{StaticResource MutedBrush}" Margin="6,0,0,0"/><ProgressBar Grid.Column="3" x:Name="PreviewAudioR" Maximum="1" Height="7" Foreground="{StaticResource MeterGradientBrush}"/></Grid></StackPanel>
+                        <TextBlock Grid.Column="1" x:Name="PreviewFormatText" Text="--" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" TextAlignment="Right"/>
+                    </Grid>
+                    <Border Grid.Row="3" Background="#0A1017" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="10"><TextBlock x:Name="PreviewStatusText" Text="Select an input source. Device/URL changes automatically restart this preview." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"/></Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="120"/><ColumnDefinition Width="140"/></Grid.ColumnDefinitions>
+            <TextBlock Text="Input sources are stored in the Kashtrix playlist and local recovery database." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="CANCEL" IsCancel="True" Margin="4"/>
+            <Button Grid.Column="2" Content="ADD SOURCE" Click="Add_Click" Margin="4" Background="#2A163B" BorderBrush="{StaticResource PinkBrush}"/>
+        </Grid>
+    </Grid>
+</Window>

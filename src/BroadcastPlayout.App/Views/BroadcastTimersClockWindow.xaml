@@ -1,0 +1,192 @@
+<Window x:Class="BroadcastPlayout.Views.BroadcastTimersClockWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kashtrix Broadcast Station Clock &amp; Timers" Width="760" Height="540" MinWidth="600" MinHeight="420"
+        WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResizeWithGrip" Background="#090D11">
+    <Window.Resources>
+        <Style x:Key="TimerHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#90A4AE"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="LargeDigit" TargetType="TextBlock" BasedOn="{StaticResource DigitalClockText}">
+            <Setter Property="FontSize" Value="48"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#00E5FF"/>
+        </Style>
+        <Style x:Key="CardPanel" TargetType="Border">
+            <Setter Property="Background" Value="#0E1319"/>
+            <Setter Property="BorderBrush" Value="#222C38"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Margin" Value="4"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="38"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="32"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Drag Header -->
+        <Border Grid.Row="0" Background="#0C1116" BorderBrush="#20272E" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="12,0,6,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="KASHTRIX TIMERS &amp; STATION CLOCK" FontWeight="Bold" Foreground="#ECEFF1" FontSize="13"/>
+                    <TextBlock Text="  ·  " Foreground="{StaticResource MutedBrush}"/>
+                    <TextBlock Text="{Binding ChannelName, StringFormat='CH: {0}'}" Foreground="#B388FF" FontSize="11" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <CheckBox x:Name="TopmostCheck" Content="ALWAYS ON TOP" Foreground="#90A4AE" FontSize="9.5" Margin="0,0,12,0" VerticalAlignment="Center" Click="Topmost_Click"/>
+                    <Button Click="Minimize_Click" Style="{StaticResource WindowControlButton}" ToolTip="Minimize"><TextBlock Style="{StaticResource WindowMinimizeGlyph}"/></Button>
+                    <Button Click="Close_Click" Style="{StaticResource WindowCloseButton}" ToolTip="Close"><TextBlock Style="{StaticResource WindowCloseGlyph}"/></Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Display Content Grid -->
+        <Grid Grid.Row="1" Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1.2*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Row 0: Station Clock + Active Playout State -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.5*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Station Master Clock -->
+                <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="STATION WALL CLOCK" Style="{StaticResource TimerHeader}"/>
+                            <TextBlock x:Name="StationDateText" Foreground="#78909C" FontSize="11" Margin="12,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="StationClockText" Grid.Row="1" Text="00:00:00" Style="{StaticResource LargeDigit}" FontSize="56" Foreground="#FFD54F" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    </Grid>
+                </Border>
+
+                <!-- On-Air Status & Channel Details -->
+                <Border Grid.Column="1" Style="{StaticResource CardPanel}">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="PLAYOUT STATUS" Style="{StaticResource TimerHeader}"/>
+                        <TextBlock Text="{Binding PlayoutStatus, TargetNullValue='IDLE'}" FontWeight="Bold" FontSize="26" Foreground="{Binding PlayoutStatusBrush}"/>
+                        <TextBlock Text="{Binding PlayoutPreset, StringFormat='FORMAT: {0}'}" Foreground="#90A4AE" FontSize="11" Margin="0,4,0,0"/>
+                        <TextBlock Text="{Binding ProgramFormatText}" Foreground="#607D8B" FontSize="10"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Row 1: Active On-Air Item (Remaining / Elapsed) -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- On-Air Item Remaining Countdown -->
+                <Border Grid.Column="0" Style="{StaticResource CardPanel}" BorderBrush="#C62828">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <TextBlock Text="CURRENT ITEM REMAINING" Style="{StaticResource TimerHeader}" Foreground="#EF5350"/>
+                            <TextBlock Text="{Binding CurrentItem.Title, TargetNullValue='No Item Playing'}" HorizontalAlignment="Right" Foreground="#B0BEC5" FontSize="10.5" TextTrimming="CharacterEllipsis" MaxWidth="190"/>
+                        </Grid>
+                        <TextBlock Grid.Row="1" Text="{Binding CurrentRemainingText, FallbackValue='00:00:00'}" Style="{StaticResource LargeDigit}" Foreground="#FF5252" VerticalAlignment="Center"/>
+                        <ProgressBar Grid.Row="2" Height="4" Value="{Binding ProgramProgressPercent, Mode=OneWay}" Foreground="#EF5350" Background="#1A232F" BorderThickness="0" Margin="0,4,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- On-Air Item Elapsed -->
+                <Border Grid.Column="1" Style="{StaticResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="CURRENT ITEM ELAPSED" Style="{StaticResource TimerHeader}"/>
+                        <TextBlock Grid.Row="1" Text="{Binding CurrentElapsedText, FallbackValue='00:00:00'}" Style="{StaticResource LargeDigit}" Foreground="#4CAF50" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="2" Text="{Binding ProgramDurationText, Mode=OneWay, StringFormat='DURATION: {0}'}" Foreground="#78909C" FontSize="10.5"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Row 2: Block Remaining + Total Rundown Remaining -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Current Block Remaining -->
+                <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <TextBlock Text="BLOCK REMAINING" Style="{StaticResource TimerHeader}" Foreground="#AB47BC"/>
+                            <TextBlock Text="{Binding CurrentItem.BlockName, TargetNullValue='DEFAULT BLOCK'}" HorizontalAlignment="Right" Foreground="#CE93D8" FontSize="10.5" TextTrimming="CharacterEllipsis" MaxWidth="180"/>
+                        </Grid>
+                        <TextBlock Grid.Row="1" Text="{Binding CurrentBlockRemainingText, FallbackValue='00:00:00'}" Style="{StaticResource LargeDigit}" Foreground="#BA68C8" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="2" Text="CONTIGUOUS SEGMENT TIME" Foreground="#78909C" FontSize="10"/>
+                    </Grid>
+                </Border>
+
+                <!-- Total Rundown Remaining -->
+                <Border Grid.Column="1" Style="{StaticResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="TOTAL PLAYLIST REMAINING" Style="{StaticResource TimerHeader}" Foreground="#42A5F5"/>
+                        <TextBlock Grid.Row="1" Text="{Binding PlaylistRemainingTimeText, FallbackValue='00:00:00'}" Style="{StaticResource LargeDigit}" Foreground="#64B5F6" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="2" Text="{Binding PlaylistDurationText, Mode=OneWay}" Foreground="#90A4AE" FontSize="10.5"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- Footer / Status Bar -->
+        <Border Grid.Row="2" Background="#0C1116" BorderBrush="#20272E" BorderThickness="0,1,0,0">
+            <Grid Margin="12,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="NEXT EVENT: " Foreground="#78909C" FontSize="10"/>
+                    <TextBlock Text="{Binding NextItem.Title, TargetNullValue='END OF RUNDOWN'}" Foreground="#B0BEC5" FontWeight="SemiBold" FontSize="10" TextTrimming="CharacterEllipsis" MaxWidth="440"/>
+                    <TextBlock Text="  ·  " Foreground="#546E7A" FontSize="10"/>
+                    <TextBlock Text="{Binding NextDurationText, Mode=OneWay}" Foreground="#90A4AE" FontSize="10"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="KASHTRIX TIMERS MONITOR" Foreground="#455A64" FontSize="9.5" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

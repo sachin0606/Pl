@@ -1,0 +1,5 @@
+POST http://127.0.0.1:9080/api/v1/playout/channels/KTX-PLAYOUT-01/commands
+Content-Type: application/json
+X-Kashtrix-Api-Key: YOUR_KEY
+
+{"requestId":"take-001","action":"take","transition":"cut"}

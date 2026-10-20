@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{width:100%;height:100%;margin:0;background:transparent;overflow:hidden;font-family:Segoe UI,Arial,sans-serif;color:white}
+.wrap{position:absolute;left:70px;bottom:70px;width:1160px;display:flex;align-items:stretch;filter:drop-shadow(0 10px 28px rgba(0,0,0,.45));animation:in .62s cubic-bezier(.2,.82,.25,1) both}
+.tag{background:#e6322b;padding:18px 25px;font-weight:900;font-size:28px;letter-spacing:1.5px;white-space:nowrap;display:flex;align-items:center}
+.copy{background:linear-gradient(90deg,rgba(7,12,17,.96),rgba(15,28,40,.91));padding:14px 28px 16px;min-width:0;flex:1;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.08)}
+.headline{font-size:35px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sub{font-size:20px;color:#b9c7d0;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live{position:absolute;right:78px;bottom:75px;background:#111b24;border:1px solid rgba(255,255,255,.15);padding:10px 16px;font-size:20px;font-weight:700;animation:pulse 1.3s ease-in-out infinite}
+@keyframes in{from{transform:translateX(-130%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(230,50,43,.12);border-color:#e6322b}}
+</style>
+<script>
+window.Kashtrix={
+ update:function(d){
+   if(d.headline) document.getElementById('headline').textContent=d.headline;
+   if(d.subheadline) document.getElementById('sub').textContent=d.subheadline;
+   if(d.tag) document.getElementById('tag').textContent=d.tag;
+ }
+};
+window.addEventListener('kashtrix-data',e=>window.Kashtrix.update(e.detail||{}));
+</script>
+</head>
+<body>
+<div class="wrap"><div id="tag" class="tag">BREAKING NEWS</div><div class="copy"><div id="headline" class="headline">Kashtrix Chromium HTML graphics</div><div id="sub" class="sub">Transparent CSS + JavaScript animation running live</div></div></div>
+<div class="live">HTML / CHROMIUM</div>
+</body>
+</html>

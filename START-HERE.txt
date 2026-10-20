@@ -1,0 +1,35 @@
+KASHTRIX FIX49H - CONSOLIDATED BUILD DEBUG RECOVERY
+====================================================
+
+FIRST BUILD
+-----------
+1. Extract this package to a clean short local path, for example:
+      C:\Kashtrix\FIX49H
+2. Close all older Kashtrix applications.
+3. Run:
+      SETUP-AND-BUILD.cmd
+4. A complete Windows acceptance run must continue through every verifier stage,
+   restore packages, build all 16 application projects, complete startup smoke tests
+   and finish with:
+      FULL SOLUTION BUILD PASSED.
+
+WHAT FIX49H CHANGES
+-------------------
+- FIX48J verifier: replaced the obsolete LayerList.UnselectAll requirement with structural
+  validation of the current exact-selection implementation.
+- FIX49A verifier: replaced the obsolete CTRL/SHIFT MULTI-SELECT label requirement with
+  structural validation of the current Ctrl/Shift selection handlers and selection set.
+- FIX49H verifier self-check: prevents either retired signature from being reintroduced.
+- No application/runtime source files were changed from FIX49G in this recovery.
+
+RETAINED CG EDITOR WORKFLOW
+---------------------------
+- Ctrl+click toggles exact layers from timeline rows/clips/handles/keyframes.
+- Shift+click selects an anchored range.
+- Group/PRECOMPOSE use the editor-owned selected layer ID set.
+- Double-click PRECOMP to enter; UP returns to parent.
+- Timeline -/+ changes the real timeline time scale used by ruler, clips, keyframes,
+  playhead, trims and drag math.
+
+If Windows reports a new compiler/runtime error after the verifier reaches restore/build,
+keep the complete SETUP-AND-BUILD.cmd output from the first error onward.

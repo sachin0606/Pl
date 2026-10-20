@@ -1,0 +1,69 @@
+.updateContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    bottom: 50px;
+}
+
+
+.news-text {
+    font-family: 'Aakriti', sans-serif;
+    color: rgb(255, 255, 255);
+    font-size: 2.6vw;
+    text-align: center;
+    /* text-shadow: 0 0 5px rgba(4, 18, 99, 0.2);
+    filter: blur(0.3px);  */
+    margin: 0;
+    display: inline-flex; /* Combines inline-block and flex */
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+
+.text-container {
+    position: relative;
+    width: 100%;
+    height: 60px;
+    /* margin: 0 50px 0 400px; Left and right margins */
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    background: transparent;
+    margin-left: 5%;
+}
+
+
+.news-title-container{
+    position: relative;
+    margin-left: 10%;
+    
+}
+
+
+.news-title {
+
+
+    font-family: "Libre Franklin", serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 2rem; /* Use the size you prefer */
+    color: rgb(255, 255, 255);
+    white-space: nowrap;
+    text-align: center;
+    /* text-shadow: 0 0 5px rgba(4, 18, 99, 0.2);
+    filter: blur(0.3px);  */
+    margin: 0;
+    display: inline-flex; /* Combines inline-block and flex */
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    padding-inline: 10%;
+    background-color: #212163;
+    border-radius: 10px;
+    height: 60px;
+}

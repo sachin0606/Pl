@@ -1,0 +1,30 @@
+<Window x:Class="BroadcastPlayout.Views.FullscreenWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" ResizeMode="CanResize" Background="#090D11" Topmost="True" ShowInTaskbar="False" AllowsTransparency="False">
+    <Border Background="#090D11" BorderBrush="Transparent" BorderThickness="0">
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition x:Name="TitleBarRow" Height="34"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Border x:Name="TitleBarHost" Grid.Row="0" Background="#0C1116" BorderBrush="#20272E" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="10,0,6,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="K" FontWeight="Bold" FontSize="18" Foreground="#8C4BC2" Margin="0,0,7,0"/>
+                        <TextBlock Text="KASHTRIX PROGRAM MONITOR" Foreground="#EAF0F4" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Width="28" Height="22" Margin="2,0" Padding="0" Click="MinimizeButton_Click" ToolTip="Minimize"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE921;" HorizontalAlignment="Center" VerticalAlignment="Center"/></Button>
+                        <Button Width="28" Height="22" Margin="2,0" Padding="0" Click="MaximizeButton_Click" ToolTip="Maximize / Restore"><TextBlock x:Name="MaximizeGlyph" FontFamily="Segoe MDL2 Assets" Text="&#xE922;" HorizontalAlignment="Center" VerticalAlignment="Center"/></Button>
+                        <Button Width="28" Height="22" Margin="2,0" Padding="0" Click="CloseButton_Click" ToolTip="Close"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8BB;" HorizontalAlignment="Center" VerticalAlignment="Center"/></Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Grid Grid.Row="1" Background="Black">
+                <Image x:Name="OutputImage" Stretch="Uniform" SnapsToDevicePixels="True"/>
+                <Border Background="#B326333E" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" Padding="8,3">
+                    <TextBlock Text="PROGRAM" Foreground="White" FontWeight="Bold"/>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

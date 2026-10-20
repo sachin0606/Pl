@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 12,
+  "method": "tools/call",
+  "params": {
+    "name": "mam_search_assets",
+    "arguments": {
+      "query": "election package",
+      "workflowState": "READY",
+      "limit": 10
+    }
+  }
+}

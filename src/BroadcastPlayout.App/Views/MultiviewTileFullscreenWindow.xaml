@@ -1,0 +1,171 @@
+<Window x:Class="BroadcastPlayout.Views.MultiviewTileFullscreenWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FULLSCREEN TILE MONITOR · AUDIO ANALYSIS"
+        Width="1280" Height="760" MinWidth="800" MinHeight="500"
+        WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize"
+        Background="{StaticResource Bg0Brush}" Foreground="{StaticResource TextBrush}">
+
+    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Background="{StaticResource Bg0Brush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="42"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="32"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Chrome Header -->
+            <Border Grid.Row="0" Background="{StaticResource Bg1Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="14,0,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="#3E2359" CornerRadius="3" Padding="8,3" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding Index, StringFormat=SOURCE #{0:D2}}" FontWeight="Bold" FontSize="11" Foreground="#FFFFFF"/>
+                        </Border>
+                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <Border Background="#181122" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="2" Padding="6,2" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding Format}" Foreground="{StaticResource AccentBrush}" FontSize="10" FontWeight="SemiBold"/>
+                        </Border>
+                        <Border Background="#102A1A" BorderBrush="#34D399" BorderThickness="1" CornerRadius="2" Padding="6,2">
+                            <TextBlock Text="{Binding Status}" Foreground="#34D399" FontSize="10" FontWeight="Bold"/>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Press ESC to Exit Fullscreen" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                        <Button Content="—" Width="32" Height="26" Click="Minimize_Click" Style="{StaticResource ChromeButton}" ToolTip="Minimize"/>
+                        <Button Content="⛶" Width="32" Height="26" Click="ToggleMaximize_Click" Style="{StaticResource ChromeButton}" ToolTip="Maximize / Restore"/>
+                        <Button Content="✕" Width="32" Height="26" Click="Close_Click" Style="{StaticResource ChromeButton}" Foreground="#FF8989" ToolTip="Close"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Content Area: Video Surface + Audio VU Meters -->
+            <Grid Grid.Row="1" Margin="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="180"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Fullscreen Video Viewport -->
+                <Border Grid.Column="0" Background="#020304" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Margin="0,0,6,0" ClipToBounds="True">
+                    <Grid>
+                        <Image Source="{Binding Image, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                        <!-- Center Overlay Text (if clock or status) -->
+                        <TextBlock Text="{Binding OverlayText, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="#E8EDF2" FontFamily="Consolas" FontSize="28" FontWeight="Bold" TextAlignment="Center"/>
+
+                        <!-- Real-time Signal QC Indicators Overlay (Top Right) -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12">
+                            <Border Background="#B91C1C" CornerRadius="3" Padding="8,4" Margin="3,0" Visibility="{Binding BlackFrameAlertVisibility, FallbackValue=Collapsed}">
+                                <TextBlock Text="BLACK FRAME DETECTED" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                            </Border>
+                            <Border Background="#C2410C" CornerRadius="3" Padding="8,4" Margin="3,0" Visibility="{Binding FreezeAlertVisibility, FallbackValue=Collapsed}">
+                                <TextBlock Text="FREEZE SIGNAL" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                            </Border>
+                            <Border Background="#D97706" CornerRadius="3" Padding="8,4" Margin="3,0" Visibility="{Binding Scte35AlertVisibility, FallbackValue=Collapsed}">
+                                <TextBlock Text="SCTE-35 SPLICE CUE" Foreground="Black" FontSize="10" FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Bottom Source Banner -->
+                        <Border Background="#C0090D14" VerticalAlignment="Bottom" Padding="12,6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12" FontWeight="Bold" Margin="0,0,12,0"/>
+                                    <TextBlock Text="KASHTRIX BASEBAND / IP ENGINE" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="1080p59.94 · 16:9 REC.709" Foreground="#B78BE7" FontSize="11" FontWeight="SemiBold"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Studio Broadcast Audio Level Meters (EBU R128 / True Peak) -->
+                <Border Grid.Column="1" Background="{StaticResource Bg1Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Audio Panel Header -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                            <TextBlock Text="AUDIO METERS" FontWeight="Bold" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                            <TextBlock Text="Dual PPM / True Peak" FontSize="9" Foreground="{StaticResource MutedBrush}"/>
+                        </StackPanel>
+
+                        <!-- Vertical Meter Bars + dB Scale -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- dB Scale Labels -->
+                            <StackPanel Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" Margin="0,0,6,0">
+                                <TextBlock Text="0 dB" FontSize="8.5" Foreground="#EF4444" Margin="0,0,0,22"/>
+                                <TextBlock Text="-6 dB" FontSize="8.5" Foreground="#F59E0B" Margin="0,0,0,22"/>
+                                <TextBlock Text="-12 dB" FontSize="8.5" Foreground="#F59E0B" Margin="0,0,0,22"/>
+                                <TextBlock Text="-18 dB" FontSize="8.5" Foreground="#10B981" Margin="0,0,0,22"/>
+                                <TextBlock Text="-24 dB" FontSize="8.5" Foreground="#10B981" Margin="0,0,0,22"/>
+                                <TextBlock Text="-36 dB" FontSize="8.5" Foreground="#10B981" Margin="0,0,0,22"/>
+                                <TextBlock Text="-48 dB" FontSize="8.5" Foreground="#6B7280" Margin="0,0,0,22"/>
+                                <TextBlock Text="-60 dB" FontSize="8.5" Foreground="#6B7280"/>
+                            </StackPanel>
+
+                            <!-- Left Channel Meter -->
+                            <Border Grid.Column="1" Background="#090E14" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Margin="2,0,2,0">
+                                <Grid>
+                                    <ProgressBar Orientation="Vertical" Maximum="1" Value="{Binding AudioLeft, Mode=OneWay}"
+                                                 Foreground="{StaticResource MeterGradientBrush}" Background="Transparent" BorderThickness="0" VerticalAlignment="Stretch"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Right Channel Meter -->
+                            <Border Grid.Column="2" Background="#090E14" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Margin="2,0,2,0">
+                                <Grid>
+                                    <ProgressBar Orientation="Vertical" Maximum="1" Value="{Binding AudioRight, Mode=OneWay}"
+                                                 Foreground="{StaticResource MeterGradientBrush}" Background="Transparent" BorderThickness="0" VerticalAlignment="Stretch"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+
+                        <!-- Meter Labels (CH 1 / L and CH 2 / R) -->
+                        <Grid Grid.Row="2" Margin="40,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="CH 1 (L)" HorizontalAlignment="Center" FontWeight="Bold" FontSize="9.5" Foreground="#B78BE7"/>
+                            <TextBlock Grid.Column="1" Text="CH 2 (R)" HorizontalAlignment="Center" FontWeight="Bold" FontSize="9.5" Foreground="#B78BE7"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Bottom Status Footer -->
+            <Border Grid.Row="2" Background="{StaticResource Bg1Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,0">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Kashtrix Broadcast Audio &amp; Video Inspection Mode · High Precision True-Peak Metering" Foreground="{StaticResource MutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="STEREO 48 kHz / 24-bit PCM" Foreground="#8055B3" FontWeight="Bold" FontSize="10" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

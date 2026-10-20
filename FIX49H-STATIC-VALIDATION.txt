@@ -1,0 +1,54 @@
+KASHTRIX FIX49H - CONSOLIDATED BUILD DEBUG / VERIFIER VALIDATION
+=================================================================
+
+SOURCE OF THIS RECOVERY
+-----------------------
+The supplied Windows FIX49G SETUP-AND-BUILD log passed the verifier through FIX48H and
+then stopped at FIX48J because Verify-And-Build.ps1 required the retired literal
+LayerList.UnselectAll. The current CG Editor selection implementation intentionally uses
+an editor-owned HashSet<Guid> (_selectedLayerIds), SetLayerSelection,
+ToggleLayerSelection and SyncLayerListSelectionVisuals instead.
+
+FIXES APPLIED
+-------------
+1. FIX48J verifier guard:
+   - removed obsolete LayerList.UnselectAll requirement;
+   - now validates _selectedLayerIds.Clear() and SyncLayerListSelectionVisuals.
+2. FIX49A verifier guard (proactive downstream recovery):
+   - removed obsolete CTRL/SHIFT MULTI-SELECT UI-label requirement;
+   - now validates _selectedLayerIds, ToggleLayerSelection,
+     LayerList_PreviewMouseLeftButtonDown and SelectTimelineLayer.
+3. Added FIX49H verifier/source consistency guard before NuGet restore:
+   - validates current exact-selection/timeline-zoom architecture;
+   - rejects reintroduction of the two retired verifier signatures.
+4. Application/runtime source under src/ is unchanged from FIX49G.
+
+STATIC AUDIT RESULTS
+--------------------
+PASS - 49 XAML files parse as XML.
+PASS - 16 .csproj files parse as XML.
+PASS - solution contains 16 project entries and all project paths exist.
+PASS - all 16 application projects declare RuntimeIdentifier win-x64.
+PASS - 15 ProjectReference paths resolve.
+PASS - 660 unique XAML event-handler references checked against paired code-behind.
+PASS - 553 verifier literal regression-signature checks resolve against current sources.
+PASS - post-FIX48J direct verifier regex operands inspected with no additional missing current-source condition.
+PASS - retired quoted verifier signature 'LayerList.UnselectAll' is absent.
+PASS - retired quoted verifier label 'CTRL/SHIFT MULTI-SELECT' is absent.
+PASS - obsolete DRAG RED PLAYHEAD literal verifier dependency is absent.
+PASS - src/ tree digest matches FIX49G exactly:
+       021ec2553e93401388eaf43340babdd6a59599e03131599727b5ef378d256a42
+PASS - no bin/ or obj/ build-cache directories in the package.
+PASS - no Markdown files in the package.
+
+WINDOWS BUILD NOTE
+------------------
+This Linux execution environment does not contain the Windows .NET 10/WPF SDK or Windows
+PowerShell 5.1, so it cannot execute the authoritative dotnet restore/build/startup-smoke
+portion of SETUP-AND-BUILD.cmd. The supplied FIX49G Windows log already proved the setup,
+PowerShell parser, .NET 10 SDK, FFmpeg/NDI and verifier chain through FIX48H on the target
+machine. FIX49H changes only Verify-And-Build.ps1 plus package documentation; runtime
+application source is unchanged.
+
+Authoritative acceptance on Windows remains:
+    FULL SOLUTION BUILD PASSED.

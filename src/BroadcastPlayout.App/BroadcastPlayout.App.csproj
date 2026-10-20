@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseSystemDrawing>true</UseSystemDrawing>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <SelfContained>false</SelfContained>
+    <CefSharpRuntimeIdentifierOverride>win-x64</CefSharpRuntimeIdentifierOverride>
+    <LangVersion>14.0</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>Kashtrix.Playout</AssemblyName>
+    <ApplicationIcon>Branding\kashtrix-playout.ico</ApplicationIcon>
+    <!-- Avoid missing ref/Kashtrix.Playout.dll after Clean-BuildCache during direct VS project builds. -->
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <RootNamespace>BroadcastPlayout</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('vendor\decklink\Interop.DeckLinkAPI64.dll')">
+    <DefineConstants>$(DefineConstants);DECKLINK_SDK</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FFmpeg.AutoGen.Abstractions" Version="9.0.1.1" />
+    <PackageReference Include="FFmpeg.AutoGen.Bindings.DynamicallyLoaded" Version="9.0.1.1" />
+    <PackageReference Include="NAudio" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <PackageReference Include="CefSharp.OffScreen.NETCore" Version="151.3.170" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('vendor\decklink\Interop.DeckLinkAPI64.dll')">
+    <Reference Include="Interop.DeckLinkAPI64">
+      <HintPath>vendor\decklink\Interop.DeckLinkAPI64.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="..\Kashtrix.Shared\KashtrixTheme.xaml" Link="Themes\KashtrixTheme.xaml" />
+    <Resource Include="Branding\*.png" />
+    <Resource Include="Branding\*.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- FIX29: legacy BreakingSequence path can hit MAX_PATH in Downloads. Ignore any
+         leftover FIX28 copy; the same assets now live under demos\ref\brk. -->
+    <None Remove="demos\reference\BreakingSequence\**\*" />
+    <None Update="demos\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="native\ffmpeg\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="native\ndi\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\decklink\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="tools\yt-dlp.exe" CopyToOutputDirectory="PreserveNewest" Link="yt-dlp.exe" />
+  </ItemGroup>
+</Project>

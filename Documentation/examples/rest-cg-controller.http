@@ -1,0 +1,5 @@
+POST http://127.0.0.1:9080/api/v1/cg-controller/play
+Content-Type: application/json
+X-Kashtrix-Api-Key: YOUR_KEY
+
+{"targets":["KTX-PLAYOUT-01"],"bus":"PROGRAM","template":"LOWER_THIRD_BASIC","layer":20,"data":{"name":"Presenter","title":"Anchor"}}
