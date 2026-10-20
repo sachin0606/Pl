@@ -25,9 +25,13 @@ public sealed unsafe class VideoFrameConverter : IDisposable
     private bool _disposed;
 
     public VideoFrameConverter(int width, int height, AVPixelFormat sourceFormat)
+        : this(width, height, sourceFormat, width, height) { }
+
+    /// <summary>Converts and scales in one pass (used by small previews, so they never hold full-size frames).</summary>
+    public VideoFrameConverter(int sourceWidth, int sourceHeight, AVPixelFormat sourceFormat, int width, int height)
     {
         _width = width; _height = height;
-        _ctx = ffmpeg.sws_getContext(width, height, sourceFormat, width, height, AVPixelFormat.AV_PIX_FMT_BGRA,
+        _ctx = ffmpeg.sws_getContext(sourceWidth, sourceHeight, sourceFormat, width, height, AVPixelFormat.AV_PIX_FMT_BGRA,
             (int)SwsFlags.SWS_BILINEAR, null, null, null);
         if (_ctx == null) throw new InvalidOperationException("sws_getContext failed.");
         _stride = checked(width * 4);

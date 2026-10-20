@@ -56,6 +56,11 @@ public sealed class PlaylistItem : INotifyPropertyChanged
     private string _imageUrl = string.Empty;
     private string _parentalAdvisory = string.Empty;
     private bool _premiere;
+    private string _film = string.Empty;
+    private string _singer = string.Empty;
+    private string _lyricist = string.Empty;
+    private string _musicDirector = string.Empty;
+    private string _musicLabel = string.Empty;
     private TimeSpan _sourceDuration = TimeSpan.Zero;
     private double _sourceFrameRate = 25.0;
     private bool _isLiveSource;
@@ -357,6 +362,14 @@ public sealed class PlaylistItem : INotifyPropertyChanged
     public string ImageUrl { get => _imageUrl; set => Set(ref _imageUrl, value ?? string.Empty); }
     public string ParentalAdvisory { get => _parentalAdvisory; set => Set(ref _parentalAdvisory, value ?? string.Empty); }
     public bool Premiere { get => _premiere; set => Set(ref _premiere, value); }
+
+    // Song credits shown by the music Now/Next package. Empty fields fall back to the folder's
+    // credits.csv and then to the file name (see SongCredits).
+    public string Film { get => _film; set => Set(ref _film, value?.Trim() ?? string.Empty); }
+    public string Singer { get => _singer; set => Set(ref _singer, value?.Trim() ?? string.Empty); }
+    public string Lyricist { get => _lyricist; set => Set(ref _lyricist, value?.Trim() ?? string.Empty); }
+    public string MusicDirector { get => _musicDirector; set => Set(ref _musicDirector, value?.Trim() ?? string.Empty); }
+    public string MusicLabel { get => _musicLabel; set => Set(ref _musicLabel, value?.Trim() ?? string.Empty); }
 
     public bool IsLiveSource { get => _isLiveSource; set { if (Set(ref _isLiveSource, value)) { Raise(nameof(CanTrim)); Raise(nameof(MediaDetails)); Raise(nameof(CategoryColor)); } } }
     public int CaptureWidth { get => _captureWidth; set => Set(ref _captureWidth, Math.Max(0, value)); }

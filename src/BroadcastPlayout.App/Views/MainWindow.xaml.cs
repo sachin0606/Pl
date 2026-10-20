@@ -763,6 +763,12 @@ public partial class MainWindow : Window
         win.ShowDialog();
     }
 
+    private void MusicPackage_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new MusicPackageWindow(_vm) { Owner = this };
+        win.ShowDialog();
+    }
+
     private void WeatherFields_Click(object sender, RoutedEventArgs e)
     {
         var win = new BroadcastDynamicFieldsDialog(_vm, initialTab: 1) { Owner = this };

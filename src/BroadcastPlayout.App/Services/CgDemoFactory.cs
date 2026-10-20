@@ -33,6 +33,7 @@ public static class CgDemoFactory
     {
         var dir = GetCgDemoDirectory();
         var canonicalProjects = CgUniqueDemoFactory.Create();
+        canonicalProjects.AddRange(MusicPackageTemplates.Create());
         var loaded = new List<CgProject>();
         var loadedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

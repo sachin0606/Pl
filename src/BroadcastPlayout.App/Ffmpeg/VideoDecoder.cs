@@ -35,6 +35,7 @@ public sealed unsafe class VideoDecoder : IDisposable
     private bool _inputEof;
     private bool _flushSent;
     private bool _hardwareFrameSeen;
+    private readonly int _maxOutputWidth;
 
     public string DecoderBackend { get; private set; } = "CPU";
     public bool HardwareAccelerationActive => _hardwareFrameSeen;
@@ -44,9 +45,16 @@ public sealed unsafe class VideoDecoder : IDisposable
     public VideoDecoder(PlaylistItem item) : this(item, null) { }
 
     /// <param name="shared">When set, packets come from the segment's shared input instead of a second open.</param>
-    public VideoDecoder(PlaylistItem item, SharedDemuxer? shared)
+    public VideoDecoder(PlaylistItem item, SharedDemuxer? shared) : this(item, shared, 0) { }
+
+    /// <param name="maxOutputWidth">
+    /// Above 0 the decoder works as a light preview: frames are scaled down to at most this width
+    /// during colour conversion, and the codec uses two threads without the loop filter.
+    /// </param>
+    public VideoDecoder(PlaylistItem item, SharedDemuxer? shared, int maxOutputWidth)
     {
         _item = item ?? throw new ArgumentNullException(nameof(item));
+        _maxOutputWidth = Math.Max(0, maxOutputWidth);
         if (item.SourceKind.Equals("NDI", StringComparison.OrdinalIgnoreCase))
         {
             _ndi = new NdiVideoReceiver(item.FilePath);
@@ -116,6 +124,12 @@ public sealed unsafe class VideoDecoder : IDisposable
             codec->thread_count = pref.Equals("CPU", StringComparison.OrdinalIgnoreCase)
                 ? 0
                 : Math.Clamp(Environment.ProcessorCount / 4, 1, 4);
+            if (_maxOutputWidth > 0)
+            {
+                // A thumbnail-sized preview must stay cheap next to the Program decoder.
+                codec->thread_count = 2;
+                codec->skip_loop_filter = AVDiscard.AVDISCARD_ALL;
+            }
 
             if (allowHardware && TryAttachHardwareDevice(codec, decoder, pref, out backend))
                 return codec;
@@ -298,7 +312,17 @@ public sealed unsafe class VideoDecoder : IDisposable
         if (_converter is not null && _converterWidth == width && _converterHeight == height && _converterFormat == sourceFormat)
             return;
         _converter?.Dispose();
-        _converter = new VideoFrameConverter(width, height, sourceFormat);
+        if (_maxOutputWidth > 0 && width > _maxOutputWidth)
+        {
+            // Keep the aspect ratio; even sizes keep chroma-subsampled sources clean.
+            var outWidth = _maxOutputWidth & ~1;
+            var outHeight = Math.Max(2, (int)Math.Round(height * (outWidth / (double)width)) & ~1);
+            _converter = new VideoFrameConverter(width, height, sourceFormat, outWidth, outHeight);
+        }
+        else
+        {
+            _converter = new VideoFrameConverter(width, height, sourceFormat);
+        }
         _converterWidth = width;
         _converterHeight = height;
         _converterFormat = sourceFormat;

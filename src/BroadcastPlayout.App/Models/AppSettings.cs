@@ -141,6 +141,7 @@ public sealed class AppSettings
 
     // FIX42 professional broadcast I/O, standards and high-availability configuration.
     public ProfessionalBroadcastSettings ProfessionalBroadcast { get; set; } = new();
+    public MusicPackageSettings MusicPackage { get; set; } = new();
 }
 
 public sealed class CategorySetting

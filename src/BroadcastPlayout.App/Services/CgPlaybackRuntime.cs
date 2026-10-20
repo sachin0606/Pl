@@ -98,7 +98,7 @@ public static partial class CgPlaybackRuntime
         if (string.IsNullOrEmpty(text)) return string.Empty;
         if (!text.Contains('{')) return text;
 
-        var result = text;
+        var result = MusicPackageRuntime.HasTokens(text) ? MusicPackageRuntime.ResolveTokens(text) : text;
 
         // Commercial break countdown tokens
         if (result.Contains("{BackIn}", StringComparison.OrdinalIgnoreCase) ||

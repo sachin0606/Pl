@@ -350,6 +350,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var nextProg = Playlist.SkipWhile(x => x != CurrentItem).Skip(1).FirstOrDefault(x => !IsCommercialCategory(x.Category));
             return nextProg?.Title ?? NextItem?.Title ?? string.Empty;
         };
+        MusicPackageRuntime.IsLive = true;
+        MusicPackageRuntime.GetProgress = () => CurrentProgressPercent / 100.0;
+        _musicPackage = new MusicPackageRunner(
+            () => _settings.MusicPackage,
+            () => _settings.ProfessionalBroadcast.NextItemVideo,
+            command => Ui(() => ApplyMusicPackageCommand(command)));
 
         try
         {
@@ -744,6 +750,53 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _scheduleRunner = null;
             RuntimeDiagnosticsService.WriteException("SCHEDULE_RUNNER_START_ERROR", ex);
         }
+    }
+
+    // ---- Music Now/Next package (song info + progress, NEXT / LATER video box) ---------------
+
+    // Created in the constructor; null only while earlier constructor code runs.
+    private readonly MusicPackageRunner? _musicPackage;
+
+    /// <summary>Runs on the UI thread so the playlist is read safely; the runner only reacts to real changes.</summary>
+    private void RefreshMusicPackage()
+    {
+        if (_musicPackage is null) return;
+        var current = CurrentItem;
+        _musicPackage.Prepare(current, current is null ? null : NextItem, current is null ? null : UpNextItem);
+    }
+
+    /// <summary>Called by the settings window after a save.</summary>
+    public void ApplyMusicPackageSettings()
+    {
+        PersistSettings();
+        _musicPackage?.Stop();
+        RefreshMusicPackage();
+        AddRecentEvent(_settings.MusicPackage.Enabled ? "MUSIC PACKAGE · ON" : "MUSIC PACKAGE · OFF");
+    }
+
+    /// <summary>Package graphics use the same Program CG layer stack as the CG Controller and the schedule.</summary>
+    private void ApplyMusicPackageCommand(MusicPackageCommand command)
+    {
+        CgProject? project = null;
+        if (command.Play)
+        {
+            var template = CgProjects.FirstOrDefault(x => string.Equals(x.Name, command.TemplateName, StringComparison.OrdinalIgnoreCase))
+                ?? MusicPackageTemplates.Create().FirstOrDefault(x => string.Equals(x.Name, command.TemplateName, StringComparison.OrdinalIgnoreCase));
+            if (template is null)
+            {
+                AddRecentEvent("MUSIC PACKAGE · TEMPLATE NOT FOUND · " + command.TemplateName);
+                return;
+            }
+            project = JsonSerializer.Deserialize<CgProject>(JsonSerializer.Serialize(template));
+            if (project is null) return;
+        }
+        ApplyRemoteCg(new CgRemoteCommand
+        {
+            Action = command.Play ? "PLAY" : "STOP",
+            Bus = "PROGRAM",
+            Layer = command.Layer,
+            Project = project
+        });
     }
 
     /// <summary>Scheduled overlays use the same Program CG layer path as the CG Controller.</summary>
@@ -3057,10 +3110,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Raise(nameof(NowPlayingAutoText)); Raise(nameof(NextAutoText)); Raise(nameof(UpNextAutoText));
         Raise(nameof(NextDurationText));
         Raise(nameof(CurrentBlockRemainingText));
+        Ui(RefreshMusicPackage);
     }
 
     private void EvaluateAutoCg(double elapsedSeconds)
     {
+        // The music package runs on its own switch; while it owns an item the classic
+        // Now Playing / Coming Up lower thirds stay off so the two never overlap.
+        if (_musicPackage is { } musicPackage)
+        {
+            musicPackage.Tick(CurrentItem, elapsedSeconds);
+            if (musicPackage.Handles(CurrentItem)) return;
+        }
         if (!EnableAutoCg || CurrentItem is null || CurrentItem.IsCgEvent || CurrentItem.IsControlEvent) return;
         var current = CurrentItem;
 
@@ -5079,6 +5140,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try { _platformControlWatcher?.Dispose(); } catch { }
         try { _scheduler.Dispose(); } catch { }
         try { _scheduleRunner?.Dispose(); } catch { }
+        MusicPackageRuntime.GetProgress = null;
         _engine.VideoFrame -= OnVideo;
         _engine.AudioFrame -= OnAudio;
         _engine.AudioMeterFrame -= OnAudioMeter;

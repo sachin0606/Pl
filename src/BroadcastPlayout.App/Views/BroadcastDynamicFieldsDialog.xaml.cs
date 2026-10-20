@@ -116,6 +116,7 @@ public partial class BroadcastDynamicFieldsDialog : Window
 
         _settings.NextItem = NextItemCheck.IsChecked == true;
         _settings.NextItemStartTime = NextStartTimeCheck.IsChecked == true;
+        _settings.NextItemDescription = NextDescriptionCheck.IsChecked == true;
         _settings.NextItemGenre = NextGenreCheck.IsChecked == true;
         _settings.NextItemYear = NextYearCheck.IsChecked == true;
         _settings.NextItemPoster = NextPosterCheck.IsChecked == true;
@@ -228,6 +229,7 @@ public partial class BroadcastDynamicFieldsDialog : Window
     private void ApplySave_Click(object sender, RoutedEventArgs e)
     {
         SaveSettings();
+        _vm?.PersistSettings();
         DialogResult = true;
         Close();
     }

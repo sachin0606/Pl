@@ -45,6 +45,7 @@ public sealed class CgCompositor : IDisposable
 
     private VideoFrameData CompositeInternal(VideoFrameData source, CgProject? project, double timelineSeconds, bool alphaSurface, bool requireOnAir, bool inPlace = false)
     {
+        SweepIdlePreviews();
         if (project is null || (requireOnAir && !project.OnAir) || (project.Layers.Count == 0 && (project.HtmlSources?.Count ?? 0) == 0)) return source;
 
         double t;
@@ -544,6 +545,10 @@ public sealed class CgCompositor : IDisposable
                 if (!forceNormalBlend && UsesCustomBlend(visualLayer)) DrawBlendedMedia(g, targetBytes, targetWidth, targetHeight, targetStride, visualLayer.BlendMode, og => DrawVideo(og, rect, visualLayer, t - visualLayer.StartSeconds, opacity));
                 else DrawVideo(g, rect, visualLayer, t - visualLayer.StartSeconds, opacity);
                 break;
+            // Music Now/Next package elements (data from MusicPackageRuntime).
+            case "PROGRESS": DrawProgress(g, rect, visualLayer, continuousSeconds, opacity); break;
+            case "CREDITS": DrawCredits(g, rect, visualLayer, continuousSeconds, opacity, sy); break;
+            case "UPNEXTVIDEO": DrawUpNextVideo(g, rect, visualLayer, opacity); break;
             default:
                 if (visualLayer.IsTimerLayer && string.IsNullOrWhiteSpace(visualLayer.Text))
                     DrawTimer(g, rect, visualLayer, continuousSeconds, opacity, activeTextVisual);
@@ -2372,6 +2377,154 @@ public sealed class CgCompositor : IDisposable
         }
     }
 
+    /// <summary>
+    /// Thin track with a square knob at the current item's position. Fill = track colour,
+    /// Background = knob colour, BorderColor/BorderWidth = knob outline.
+    /// </summary>
+    private static void DrawProgress(Graphics g, RectangleF rect, CgLayer layer, double timelineSeconds, double opacity)
+    {
+        var progress = (float)MusicPackageRuntime.Progress(timelineSeconds);
+        var track = Math.Max(1.5f, rect.Height * .16f);
+        var middle = rect.Top + rect.Height / 2f;
+        using (var trackBrush = new SolidBrush(ParseColor(layer.Fill, opacity)))
+            g.FillRectangle(trackBrush, rect.Left, middle - track / 2f, rect.Width, track);
+
+        var knobWidth = Math.Max(4f, rect.Height * .8f);
+        var knob = new RectangleF(rect.Left + progress * Math.Max(0, rect.Width - knobWidth), rect.Top, knobWidth, rect.Height);
+        using (var knobBrush = new SolidBrush(ParseColor(layer.Background, opacity)))
+            g.FillRectangle(knobBrush, knob);
+        if (layer.BorderWidth > 0)
+        {
+            using var pen = new Pen(ParseColor(layer.BorderColor, opacity), (float)layer.BorderWidth);
+            g.DrawRectangle(pen, knob.X, knob.Y, knob.Width, knob.Height);
+        }
+    }
+
+    private readonly Dictionary<Guid, (SongInfo Song, UpNextBoxState? Box, string Template, List<string> Lines)> _creditLines = [];
+
+    /// <summary>
+    /// Credit lines that roll up one line at a time, as many as fit the layer height (two in the package).
+    /// Text holds one template line per row ("Lyrics : {NowLyrics}"); lines without a value are skipped.
+    /// DataItemDurationSeconds is the time each position holds. Lines are resolved once per song, not per frame.
+    /// </summary>
+    private void DrawCredits(Graphics g, RectangleF rect, CgLayer layer, double timelineSeconds, double opacity, double sy)
+    {
+        var song = MusicPackageRuntime.Now;
+        var box = MusicPackageRuntime.Box;
+        var template = layer.Text ?? string.Empty;
+        if (!_creditLines.TryGetValue(layer.Id, out var cached) || !ReferenceEquals(cached.Song, song) || !ReferenceEquals(cached.Box, box) || !string.Equals(cached.Template, template, StringComparison.Ordinal))
+        {
+            if (_creditLines.Count > 64) _creditLines.Clear();
+            cached = (song, box, template, MusicPackageRuntime.CreditLines(template));
+            _creditLines[layer.Id] = cached;
+        }
+        var lines = cached.Lines;
+        if (lines.Count == 0) return;
+
+        var style = FontStyle.Regular;
+        if (layer.Bold) style |= FontStyle.Bold;
+        if (layer.Italic) style |= FontStyle.Italic;
+        var effectiveSy = sy > 0.05 ? sy : 1.0;
+        var fontScale = rect.Height / Math.Max(1.0, layer.Height * effectiveSy);
+        using var font = CreateFont(layer.FontFamily, (float)Math.Max(6, layer.FontSize * effectiveSy * fontScale), style);
+        var lineHeight = font.GetHeight(g) * (float)Math.Max(.6, layer.LineSpacing);
+        var visible = Math.Max(1, (int)Math.Floor(rect.Height / lineHeight + .05));
+
+        // Roll: hold each position, then slide up by one line. Static when everything fits.
+        var first = 0;
+        var offset = 0f;
+        if (lines.Count > visible)
+        {
+            var hold = Math.Max(1.0, layer.DataItemDurationSeconds);
+            const double slide = .45;
+            var step = (long)Math.Floor(Math.Max(0, timelineSeconds) / hold);
+            var phase = Math.Max(0, timelineSeconds) - step * hold;
+            first = (int)(step % lines.Count);
+            if (phase > hold - slide) offset = (float)SmoothStep((phase - (hold - slide)) / slide);
+        }
+
+        using var brush = new SolidBrush(ParseColor(layer.Fill, opacity));
+        using var shadow = layer.ShadowEnabled ? new SolidBrush(ParseColor(layer.ShadowColor, opacity)) : null;
+        using var format = new StringFormat(StringFormatFlags.NoWrap) { Trimming = StringTrimming.EllipsisCharacter };
+        var state = g.Save();
+        try
+        {
+            // Clip to whole lines so the next line never peeks in below the last visible one.
+            g.SetClip(new RectangleF(rect.Left - 4, rect.Top, rect.Width + 8, Math.Min(rect.Height, visible * lineHeight)));
+            var rows = lines.Count > visible ? visible + 1 : lines.Count;
+            for (var i = 0; i < rows; i++)
+            {
+                var text = lines[(first + i) % lines.Count];
+                var row = new RectangleF(rect.Left, rect.Top + (i - offset) * lineHeight, rect.Width, lineHeight);
+                if (shadow is not null)
+                    g.DrawString(text, font, shadow, new RectangleF(row.X + (float)layer.ShadowOffsetX, row.Y + (float)layer.ShadowOffsetY, row.Width, row.Height), format);
+                g.DrawString(text, font, brush, row, format);
+            }
+        }
+        finally { g.Restore(state); }
+    }
+
+    private readonly Dictionary<Guid, (PreviewVideoSource Source, long LastUsed)> _previews = [];
+    private long _lastPreviewSweep;
+
+    /// <summary>
+    /// The NEXT / LATER video window. Plays the box song (MusicPackageRuntime.Box) muted, from its preview
+    /// start point, decoded at about the window size on a background worker. Background colour shows until
+    /// the first frame arrives. Without playout data the layer's own Source file is used (designer preview).
+    /// </summary>
+    private void DrawUpNextVideo(Graphics g, RectangleF rect, CgLayer layer, double opacity)
+    {
+        using (var fill = new SolidBrush(ParseColor(layer.Background, opacity)))
+            if (fill.Color.A > 0) g.FillRectangle(fill, rect);
+
+        var box = MusicPackageRuntime.Box;
+        var path = !string.IsNullOrWhiteSpace(box?.Song.FilePath) ? box.Song.FilePath : layer.Source;
+        var start = box?.PreviewStartSeconds ?? 0;
+        if (string.IsNullOrWhiteSpace(path) || path.Contains("://", StringComparison.Ordinal)) return;
+
+        var now = Environment.TickCount64;
+        if (!_previews.TryGetValue(layer.Id, out var entry) || !string.Equals(entry.Source.Path, path, StringComparison.OrdinalIgnoreCase) || Math.Abs(entry.Source.StartSeconds - start) > .5)
+        {
+            entry.Source?.Dispose();
+            _previews.Remove(layer.Id);
+            if (!File.Exists(path)) return;
+            var width = Math.Clamp(((int)Math.Ceiling(rect.Width / 64.0) + 1) * 64, 128, 960);
+            entry = (new PreviewVideoSource(path, start, width), now);
+        }
+        _previews[layer.Id] = (entry.Source, now);
+
+        if (entry.Source.Latest is not { } frame) return;
+        // Cover the window: crop the source to the window's aspect ratio instead of stretching it.
+        var srcAspect = frame.Width / (double)Math.Max(1, frame.Height);
+        var dstAspect = rect.Width / Math.Max(1.0, rect.Height);
+        var crop = srcAspect > dstAspect
+            ? new RectangleF((float)((frame.Width - frame.Height * dstAspect) / 2), 0, (float)(frame.Height * dstAspect), frame.Height)
+            : new RectangleF(0, (float)((frame.Height - frame.Width / dstAspect) / 2), frame.Width, (float)(frame.Width / dstAspect));
+        var handle = GCHandle.Alloc(frame.Bgra, GCHandleType.Pinned);
+        try
+        {
+            using var bitmap = new Bitmap(frame.Width, frame.Height, frame.Stride, PixelFormat.Format32bppArgb, handle.AddrOfPinnedObject());
+            using var attrs = new ImageAttributes();
+            attrs.SetColorMatrix(new ColorMatrix { Matrix33 = (float)Math.Clamp(opacity, 0, 1) });
+            g.DrawImage(bitmap, Rectangle.Round(rect), crop.X, crop.Y, crop.Width, crop.Height, GraphicsUnit.Pixel, attrs);
+        }
+        finally { handle.Free(); }
+    }
+
+    /// <summary>Closes preview decoders whose window has not been drawn for a moment (box went off air).</summary>
+    private void SweepIdlePreviews()
+    {
+        if (_previews.Count == 0) return;
+        var now = Environment.TickCount64;
+        if (now - _lastPreviewSweep < 1000) return;
+        _lastPreviewSweep = now;
+        foreach (var (id, entry) in _previews.Where(x => now - x.Value.LastUsed > 1500).ToArray())
+        {
+            entry.Source.Dispose();
+            _previews.Remove(id);
+        }
+    }
+
     private static PlaylistItem BuildVideoSourceItem(CgLayer layer)
     {
         var kind=string.IsNullOrWhiteSpace(layer.VideoSourceKind)?"File":layer.VideoSourceKind.Trim();
@@ -2535,6 +2688,8 @@ public sealed class CgCompositor : IDisposable
         }
         foreach (var state in _videoLayers.Values) state.Dispose();
         _videoLayers.Clear();
+        foreach (var entry in _previews.Values) entry.Source.Dispose();
+        _previews.Clear();
     }
 
     private sealed class VideoLayerState : IDisposable

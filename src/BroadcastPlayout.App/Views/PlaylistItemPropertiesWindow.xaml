@@ -119,6 +119,12 @@
                         <TextBlock Text="Episode description" Style="{StaticResource SectionCaption}" Margin="0,10,0,4"/><TextBox Text="{Binding Item.EpisodeDescription, Mode=TwoWay}" Height="70" AcceptsReturn="True" TextWrapping="Wrap"/>
                         <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Season" Style="{StaticResource SectionCaption}"/><TextBox Text="{Binding Item.EpisodeSeason, Mode=TwoWay}"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Episode No" Style="{StaticResource SectionCaption}"/><TextBox Text="{Binding Item.EpisodeNumber, Mode=TwoWay}"/></StackPanel></Grid>
                         <TextBlock Text="Genre" Style="{StaticResource SectionCaption}" Margin="0,10,0,4"/><TextBox Text="{Binding Item.Genre, Mode=TwoWay}"/>
+                        <TextBlock Text="SONG CREDITS" FontSize="16" FontWeight="SemiBold" Margin="0,18,0,0"/>
+                        <TextBlock Text="Shown by the music Now / Next package. Empty fields use the folder's credits.csv, then the file name." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                        <TextBlock Text="Film / Album" Style="{StaticResource SectionCaption}" Margin="0,10,0,4"/><TextBox Text="{Binding Item.Film, Mode=TwoWay}"/>
+                        <TextBlock Text="Singer" Style="{StaticResource SectionCaption}" Margin="0,10,0,4"/><TextBox Text="{Binding Item.Singer, Mode=TwoWay}"/>
+                        <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Lyrics" Style="{StaticResource SectionCaption}"/><TextBox Text="{Binding Item.Lyricist, Mode=TwoWay}"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Music" Style="{StaticResource SectionCaption}"/><TextBox Text="{Binding Item.MusicDirector, Mode=TwoWay}"/></StackPanel></Grid>
+                        <TextBlock Text="Label / Copyright" Style="{StaticResource SectionCaption}" Margin="0,10,0,4"/><TextBox Text="{Binding Item.MusicLabel, Mode=TwoWay}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="EXTENDED EPG" FontSize="16" FontWeight="SemiBold"/>
