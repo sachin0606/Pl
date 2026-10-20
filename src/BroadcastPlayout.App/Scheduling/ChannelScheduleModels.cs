@@ -13,6 +13,12 @@ public enum ScheduleDays
     All = Mon | Tue | Wed | Thu | Fri | Sat | Sun
 }
 
+/// <summary>
+/// How an item repeats, as the editor presents it. It is a view of Days + StartDate/EndDate, so the
+/// stored schedule and the playout rules are unchanged: Once = StartDate == EndDate.
+/// </summary>
+public enum ScheduleRepeat { Once, EveryDay, SelectedDays }
+
 public enum LiveEndMode { AtEndTime, UntilManualCut }
 public enum SpotCutMode { Cut, AfterCurrentClip }
 public enum SpotSourceKind { Video, Cg }
@@ -124,6 +130,27 @@ public sealed class ChannelScheduleItem : ObservableObject
     private string WindowText => StartTime.ToString(@"hh\:mm") + (EndTime is { } end ? " – " + end.ToString(@"hh\:mm") : "");
     [JsonIgnore] public string DatesText => StartDate is null && EndDate is null ? "Always"
         : $"{StartDate:dd MMM yyyy} – {(EndDate is null ? "open" : EndDate.Value.ToString("dd MMM yyyy"))}";
+
+    [JsonIgnore] public ScheduleRepeat Repeat => StartDate is { } from && EndDate == from ? ScheduleRepeat.Once
+        : Days == ScheduleDays.All ? ScheduleRepeat.EveryDay : ScheduleRepeat.SelectedDays;
+
+    /// <summary>Short "when" for the list: "Once · Sat 25 Oct 2026", "Mon Wed Fri · until 30 Nov", "Every day".</summary>
+    [JsonIgnore] public string WhenText
+    {
+        get
+        {
+            if (IsDefault) return "Every day (default)";
+            if (Repeat == ScheduleRepeat.Once) return "Once · " + StartDate!.Value.ToString("ddd dd MMM yyyy");
+            var days = Repeat == ScheduleRepeat.EveryDay ? "Every day" : DaysText;
+            return (StartDate, EndDate) switch
+            {
+                (null, null) => days,
+                ({ } from, null) => $"{days} · from {from:dd MMM yyyy}",
+                (null, { } to) => $"{days} · until {to:dd MMM yyyy}",
+                ({ } from, { } to) => $"{days} · {from:dd MMM} – {to:dd MMM yyyy}"
+            };
+        }
+    }
     [JsonIgnore] public string SourceText => Kind is ScheduleKind.CgBottomAd or ScheduleKind.CgLShape || (Kind == ScheduleKind.SpotAd && SpotSource == SpotSourceKind.Cg)
         ? string.Join(", ", CgProjects)
         : Sources.Count == 0 ? "— no source —" : Sources.Count == 1 ? ShortName(Sources[0]) : $"{Sources.Count} sources";
@@ -138,7 +165,7 @@ public sealed class ChannelScheduleItem : ObservableObject
     /// <summary>Call after editing list fields so the grid refreshes its text columns.</summary>
     public void RaiseSummary()
     {
-        Raise(nameof(KindText)); Raise(nameof(DaysText)); Raise(nameof(TimeText)); Raise(nameof(DatesText)); Raise(nameof(SourceText));
+        Raise(nameof(KindText)); Raise(nameof(DaysText)); Raise(nameof(TimeText)); Raise(nameof(DatesText)); Raise(nameof(SourceText)); Raise(nameof(WhenText));
     }
 
     public bool OccursOn(DateTime date)

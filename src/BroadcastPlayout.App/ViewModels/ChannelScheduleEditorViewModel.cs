@@ -160,15 +160,19 @@ public sealed class ChannelScheduleEditorViewModel : ObservableObject
     private void OnItemChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(ChannelScheduleItem.KindText) or nameof(ChannelScheduleItem.DaysText) or nameof(ChannelScheduleItem.TimeText)
-            or nameof(ChannelScheduleItem.DatesText) or nameof(ChannelScheduleItem.SourceText)) return;
+            or nameof(ChannelScheduleItem.DatesText) or nameof(ChannelScheduleItem.SourceText) or nameof(ChannelScheduleItem.WhenText)) return;
         MarkChanged();
         if (e.PropertyName == nameof(ChannelScheduleItem.Kind)) { RefreshCounts(); ItemsView.Refresh(); RaiseEditor(); }
+        else if (ReferenceEquals(sender, _selected) && e.PropertyName is nameof(ChannelScheduleItem.StartDate) or nameof(ChannelScheduleItem.EndDate)
+                 or nameof(ChannelScheduleItem.Days) or nameof(ChannelScheduleItem.StartTime) or nameof(ChannelScheduleItem.EndTime))
+            RaiseWhen();
     }
 
     private void MarkChanged()
     {
         IsDirty = true;
         RebuildLanes();
+        Raise(nameof(WhenSummary));
     }
 
     // ---- Add / remove ------------------------------------------------------------------------------
@@ -189,6 +193,9 @@ public sealed class ChannelScheduleEditorViewModel : ObservableObject
                 _ => $"New {ScheduleRules.KindLabel(kind).ToLowerInvariant()}"
             },
             StartTime = start,
+            // A movie or a live event usually airs on one date; everything else repeats every day.
+            StartDate = kind is ScheduleKind.Movie or ScheduleKind.Live ? now.Date : null,
+            EndDate = kind is ScheduleKind.Movie or ScheduleKind.Live ? now.Date : null,
             EndTime = kind is ScheduleKind.News or ScheduleKind.Live or ScheduleKind.CgBottomAd or ScheduleKind.CgLShape ? start + TimeSpan.FromMinutes(30) : null,
             Times = kind == ScheduleKind.SpotAd ? [start] : [],
             CgLayer = kind switch { ScheduleKind.CgBottomAd => 10, ScheduleKind.CgLShape => 11, _ => 12 }
@@ -381,7 +388,148 @@ public sealed class ChannelScheduleEditorViewModel : ObservableObject
 
     public string? SelectedCgTemplate { get => _selectedCgTemplate; set => Set(ref _selectedCgTemplate, value); }
 
-    // Day toggles (all off = every day).
+    // ---- When: repeat, days, dates --------------------------------------------------------------
+
+    public sealed record RepeatOption(ScheduleRepeat Value, string Label)
+    {
+        // The themed ComboBox shows the item's text in its selection box.
+        public override string ToString() => Label;
+    }
+
+    public IReadOnlyList<RepeatOption> RepeatChoices { get; } =
+    [
+        new(ScheduleRepeat.Once, "One date"),
+        new(ScheduleRepeat.EveryDay, "Every day"),
+        new(ScheduleRepeat.SelectedDays, "Selected days of the week")
+    ];
+
+    /// <summary>The default filler has no date/day choices: it always runs every day when nothing else plays.</summary>
+    public bool ShowWhen => _selected is { IsDefault: false };
+    public bool IsOnce => ShowWhen && _selected!.Repeat == ScheduleRepeat.Once;
+    public bool IsSelectedDays => ShowWhen && _selected!.Repeat == ScheduleRepeat.SelectedDays;
+    public bool CanLimitDates => ShowWhen && _selected!.Repeat != ScheduleRepeat.Once;
+    public bool ShowDateRange => CanLimitDates && LimitDates;
+    public bool ShowNoLimitText => CanLimitDates && !LimitDates;
+    public bool IsAd => _selected?.Kind is ScheduleKind.SpotAd or ScheduleKind.CgBottomAd or ScheduleKind.CgLShape;
+    public string LimitDatesLabel => IsAd ? "Campaign dates (start / end)" : "Only between dates (e.g. a season or festival week)";
+    public string NoLimitText => IsAd ? "No campaign end date: the ad keeps running." : "No end date: repeats until you change it.";
+
+    public RepeatOption? SelectedRepeat
+    {
+        get => _selected is null ? null : RepeatChoices.First(x => x.Value == _selected.Repeat);
+        set
+        {
+            if (_selected is null || value is null || value.Value == _selected.Repeat) return;
+            if (_selected.IsDefault) { Message = "The default filler runs every day; add another filler slot for specific days or dates."; Raise(); return; }
+            switch (value.Value)
+            {
+                case ScheduleRepeat.Once:
+                    var date = _selected.StartDate ?? DateTime.Today;
+                    _selected.Days = ScheduleDays.All;
+                    _selected.StartDate = date;
+                    _selected.EndDate = date;
+                    break;
+                case ScheduleRepeat.EveryDay:
+                    if (_selected.Repeat == ScheduleRepeat.Once) { _selected.StartDate = null; _selected.EndDate = null; }
+                    _selected.Days = ScheduleDays.All;
+                    break;
+                case ScheduleRepeat.SelectedDays:
+                    var onceDay = _selected.Repeat == ScheduleRepeat.Once ? _selected.StartDate : null;
+                    if (onceDay is not null) { _selected.StartDate = null; _selected.EndDate = null; }
+                    // Start with one day ticked (the one-date's weekday, else today) so the choice is visible.
+                    _selected.Days = ScheduleRules.DayFlag((onceDay ?? DateTime.Today).DayOfWeek);
+                    break;
+            }
+            RaiseWhen();
+        }
+    }
+
+    /// <summary>The date of a one-date item.</summary>
+    public DateTime? OnceDate
+    {
+        get => IsOnce ? _selected!.StartDate : null;
+        set
+        {
+            if (_selected is null || value is null) return;
+            _selected.StartDate = value.Value.Date;
+            _selected.EndDate = value.Value.Date;
+            RaiseWhen();
+        }
+    }
+
+    /// <summary>Optional date limit for repeating items; off = no start or end date.</summary>
+    public bool LimitDates
+    {
+        get => _selected is not null && _selected.Repeat != ScheduleRepeat.Once && (_selected.StartDate is not null || _selected.EndDate is not null);
+        set
+        {
+            if (_selected is null || _selected.Repeat == ScheduleRepeat.Once || value == LimitDates) return;
+            if (value) _selected.StartDate = DateTime.Today;
+            else { _selected.StartDate = null; _selected.EndDate = null; }
+            RaiseWhen();
+        }
+    }
+
+    public DateTime? ValidFrom
+    {
+        get => _selected?.StartDate;
+        set
+        {
+            if (_selected is null) return;
+            if (value is { } from && _selected.EndDate is { } until && from.Date == until.Date) { Message = "To air on just one day, choose REPEAT · One date."; Raise(); return; }
+            _selected.StartDate = value;
+            RaiseWhen();
+        }
+    }
+
+    public DateTime? ValidUntil
+    {
+        get => _selected?.EndDate;
+        set
+        {
+            if (_selected is null) return;
+            // A range that ends on its start day would read as "one date": keep it a range.
+            if (value is { } until && _selected.StartDate is { } from && until.Date == from.Date) { Message = "To air on just one day, choose REPEAT · One date."; Raise(); return; }
+            _selected.EndDate = value;
+            RaiseWhen();
+        }
+    }
+
+    /// <summary>One plain sentence: when exactly this item plays.</summary>
+    public string WhenSummary
+    {
+        get
+        {
+            if (_selected is not { } item) return string.Empty;
+            if (item.IsDefault) return "Runs every day, all day, whenever nothing else is scheduled. Other filler slots replace it from their start time.";
+            var when = item.Repeat switch
+            {
+                ScheduleRepeat.Once => "Plays once on " + item.StartDate!.Value.ToString("dddd dd MMM yyyy"),
+                ScheduleRepeat.EveryDay => "Plays every day",
+                _ => "Plays every " + string.Join(", ", AllDays.Where(d => (item.Days & d.Flag) != 0).Select(d => d.Name))
+            };
+            var time = item.Kind switch
+            {
+                ScheduleKind.Filler => $" from {item.StartTime:hh\\:mm} until the next filler slot",
+                _ when UsesTimes => item.Times.Count == 0 ? " (no air times yet)" : " at " + string.Join(", ", item.Times.Select(t => t.ToString(@"hh\:mm"))),
+                ScheduleKind.CgLShape when item.LTrigger == LShapeTrigger.DuringProgramme => $" while '{item.ProgrammeMatch}' is on air",
+                _ => item.EndTime is { } end ? $" {item.StartTime:hh\\:mm} – {end:hh\\:mm}" : $" from {item.StartTime:hh\\:mm} for its full length"
+            };
+            var dates = item.Repeat == ScheduleRepeat.Once ? string.Empty : (item.StartDate, item.EndDate) switch
+            {
+                (null, null) => ", with no end date",
+                ({ } from, null) => $", starting {from:dd MMM yyyy}, with no end date",
+                (null, { } to) => $", until {to:dd MMM yyyy}",
+                ({ } from, { } to) => $", from {from:dd MMM yyyy} until {to:dd MMM yyyy}"
+            };
+            var past = item.Repeat == ScheduleRepeat.Once && item.StartDate < DateTime.Today ? "  ⚠ This date has passed." : string.Empty;
+            return when + time + dates + "." + past;
+        }
+    }
+
+    private static readonly (ScheduleDays Flag, string Name)[] AllDays =
+        [(ScheduleDays.Mon, "Mon"), (ScheduleDays.Tue, "Tue"), (ScheduleDays.Wed, "Wed"), (ScheduleDays.Thu, "Thu"), (ScheduleDays.Fri, "Fri"), (ScheduleDays.Sat, "Sat"), (ScheduleDays.Sun, "Sun")];
+
     public bool Mon { get => HasDay(ScheduleDays.Mon); set => SetDay(ScheduleDays.Mon, value); }
     public bool Tue { get => HasDay(ScheduleDays.Tue); set => SetDay(ScheduleDays.Tue, value); }
     public bool Wed { get => HasDay(ScheduleDays.Wed); set => SetDay(ScheduleDays.Wed, value); }
@@ -389,27 +537,35 @@ public sealed class ChannelScheduleEditorViewModel : ObservableObject
     public bool Fri { get => HasDay(ScheduleDays.Fri); set => SetDay(ScheduleDays.Fri, value); }
     public bool Sat { get => HasDay(ScheduleDays.Sat); set => SetDay(ScheduleDays.Sat, value); }
     public bool Sun { get => HasDay(ScheduleDays.Sun); set => SetDay(ScheduleDays.Sun, value); }
-    public bool EveryDay
-    {
-        get => _selected?.Days == ScheduleDays.All;
-        set { if (_selected is null || !value) return; _selected.Days = ScheduleDays.All; RaiseDays(); }
-    }
 
     private bool HasDay(ScheduleDays day) => _selected is not null && _selected.Days != ScheduleDays.All && (_selected.Days & day) != 0;
 
     private void SetDay(ScheduleDays day, bool on)
     {
         if (_selected is null) return;
-        if (_selected.IsDefault) { Message = "The default filler runs every day; add a day-specific filler slot instead."; RaiseDays(); return; }
         var current = _selected.Days == ScheduleDays.All ? ScheduleDays.None : _selected.Days;
         current = on ? current | day : current & ~day;
-        _selected.Days = current == ScheduleDays.None ? ScheduleDays.All : current;
-        RaiseDays();
+        if (current == ScheduleDays.None)
+        {
+            // Unticking the last day would silently mean "every day": keep it, and say how to get every day.
+            Message = "Keep at least one day ticked, or choose REPEAT · Every day.";
+            RaiseWhen();
+            return;
+        }
+        _selected.Days = current;
+        RaiseWhen();
     }
 
-    private void RaiseDays()
+    private void RaiseWhen()
     {
-        foreach (var name in new[] { nameof(Mon), nameof(Tue), nameof(Wed), nameof(Thu), nameof(Fri), nameof(Sat), nameof(Sun), nameof(EveryDay) }) Raise(name);
+        foreach (var name in new[]
+                 {
+                     nameof(Mon), nameof(Tue), nameof(Wed), nameof(Thu), nameof(Fri), nameof(Sat), nameof(Sun),
+                     nameof(ShowWhen), nameof(SelectedRepeat), nameof(IsOnce), nameof(IsSelectedDays), nameof(CanLimitDates), nameof(ShowDateRange), nameof(ShowNoLimitText),
+                     nameof(LimitDates), nameof(OnceDate), nameof(ValidFrom), nameof(ValidUntil), nameof(WhenSummary), nameof(IsAd),
+                     nameof(LimitDatesLabel), nameof(NoLimitText)
+                 })
+            Raise(name);
     }
 
     private void RaiseEditor()
@@ -423,7 +579,7 @@ public sealed class ChannelScheduleEditorViewModel : ObservableObject
                      nameof(LTrigger), nameof(RepeatMinutesText), nameof(ProgrammeMatch), nameof(CgLayerText), nameof(CgDurationText), nameof(SourceList), nameof(CgList)
                  })
             Raise(name);
-        RaiseDays();
+        RaiseWhen();
     }
 
     // ---- Sources and CG templates -------------------------------------------------------------
@@ -560,6 +716,12 @@ public sealed class ChannelScheduleEditorViewModel : ObservableObject
         foreach (var item in _items.Where(x => x.Enabled))
         {
             var label = $"{ScheduleRules.KindLabel(item.Kind)} '{item.Name}'";
+            if (item.StartDate is { } from && item.EndDate is { } to && to < from)
+                issues.Add($"{label}: the end date ({to:dd MMM yyyy}) is before the start date ({from:dd MMM yyyy}); it never plays.");
+            else if (item.Repeat == ScheduleRepeat.Once && item.StartDate < DateTime.Today)
+                issues.Add($"{label}: its date ({item.StartDate:dd MMM yyyy}) has passed; it will not play again.");
+            else if (item.EndDate is { } ended && ended < DateTime.Today)
+                issues.Add($"{label}: ended on {ended:dd MMM yyyy}; it will not play again.");
             if (ScheduleRules.IsOverlay(item))
             {
                 if (item.CgProjects.Count == 0) issues.Add($"{label}: no CG template selected.");
