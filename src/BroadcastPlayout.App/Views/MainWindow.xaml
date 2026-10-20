@@ -209,7 +209,8 @@
                             <MenuItem Header="CG Controller..." Click="CgController_Click"/>
                             <MenuItem Header="CG Designer..." Click="CgEditor_Click"/>
                             <MenuItem Header="EPG / Auto Graphics Output..." Click="EpgSettings_Click"/>
-                            <MenuItem Header="Music Now / Next Package..." Click="MusicPackage_Click"/>
+                            <MenuItem Header="Now / Next Graphics..." Click="NowNextGraphics_Click"/>
+                            <MenuItem Header="Viewer Requests..." Click="ViewerRequests_Click"/>
                         </MenuItem>
                         <MenuItem Header="SCTE-35">
                             <MenuItem Header="SCTE-35 &amp; SCTE-104 Trigger Center..." Click="ScteTriggerManager_Click"/>

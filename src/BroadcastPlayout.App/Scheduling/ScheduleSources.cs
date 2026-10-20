@@ -62,6 +62,10 @@ public static class ScheduleSources
         _ => "Program"
     };
 
+    /// <summary>The item's own category when set (e.g. a requested song is "Music"), else the one for its kind.</summary>
+    public static string CategoryOf(ChannelScheduleItem item)
+        => string.IsNullOrWhiteSpace(item.Category) ? CategoryFor(item.Kind) : item.Category.Trim();
+
     /// <summary>Builds a fresh item for one source. Media files are probed once, here.</summary>
     public static PlaylistItem? Build(ScheduledSource source, ChannelScheduleItem owner)
     {
@@ -70,7 +74,10 @@ public static class ScheduleSources
             if (source.Template is not null)
             {
                 var copy = Clone(source.Template);
-                if (string.IsNullOrWhiteSpace(copy.Category)) copy.Category = CategoryFor(owner.Kind);
+                // An explicit category on the schedule entry (e.g. a requested song) wins over the playlist's.
+                if (!string.IsNullOrWhiteSpace(owner.Category)) copy.Category = owner.Category.Trim();
+                else if (string.IsNullOrWhiteSpace(copy.Category)) copy.Category = CategoryFor(owner.Kind);
+                copy.Request ??= owner.Request;
                 return copy;
             }
             var info = MediaProbe.Read(source.Path);
@@ -80,13 +87,14 @@ public static class ScheduleSources
                 FilePath = source.Path,
                 SourceKind = "File",
                 EventType = owner.Kind == ScheduleKind.SpotAd ? "COMMERCIAL" : owner.Kind.ToString().ToUpperInvariant(),
-                Category = CategoryFor(owner.Kind),
+                Category = CategoryOf(owner),
                 SourceDuration = info.Duration,
                 InPoint = TimeSpan.Zero,
                 OutPoint = info.Duration,
                 SourceFrameRate = info.FramesPerSecond,
                 Codec = info.VideoCodec,
                 VideoFormat = $"{info.Width}x{info.Height} {info.FramesPerSecond:0.###}p",
+                Request = owner.Request,
                 Status = "Ready"
             };
         }
@@ -105,6 +113,7 @@ public static class ScheduleSources
             EventType = "LIVE",
             Category = "Live",
             IsLiveSource = true,
+            Request = owner.Request,
             Status = "Ready"
         };
         item.SourceDuration = length;

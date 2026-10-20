@@ -763,10 +763,21 @@ public partial class MainWindow : Window
         win.ShowDialog();
     }
 
-    private void MusicPackage_Click(object sender, RoutedEventArgs e)
+    private void NowNextGraphics_Click(object sender, RoutedEventArgs e)
     {
-        var win = new MusicPackageWindow(_vm) { Owner = this };
+        var win = new NowNextSettingsWindow(_vm) { Owner = this };
         win.ShowDialog();
+    }
+
+    private ViewerRequestsWindow? _viewerRequests;
+
+    private void ViewerRequests_Click(object sender, RoutedEventArgs e)
+    {
+        // Modeless: requests keep arriving while the operator works in the main window.
+        if (_viewerRequests is { IsLoaded: true }) { _viewerRequests.Activate(); return; }
+        _viewerRequests = new ViewerRequestsWindow(_vm) { Owner = this };
+        _viewerRequests.Closed += (_, _) => _viewerRequests = null;
+        _viewerRequests.Show();
     }
 
     private void WeatherFields_Click(object sender, RoutedEventArgs e)

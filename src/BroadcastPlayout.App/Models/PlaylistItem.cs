@@ -370,6 +370,9 @@ public sealed class PlaylistItem : INotifyPropertyChanged
     public string Lyricist { get => _lyricist; set => Set(ref _lyricist, value?.Trim() ?? string.Empty); }
     public string MusicDirector { get => _musicDirector; set => Set(ref _musicDirector, value?.Trim() ?? string.Empty); }
     public string MusicLabel { get => _musicLabel; set => Set(ref _musicLabel, value?.Trim() ?? string.Empty); }
+    /// <summary>Set when this item was scheduled for a viewer request.</summary>
+    public RequestTag? Request { get => _request; set => Set(ref _request, value); }
+    private RequestTag? _request;
 
     public bool IsLiveSource { get => _isLiveSource; set { if (Set(ref _isLiveSource, value)) { Raise(nameof(CanTrim)); Raise(nameof(MediaDetails)); Raise(nameof(CategoryColor)); } } }
     public int CaptureWidth { get => _captureWidth; set => Set(ref _captureWidth, Math.Max(0, value)); }

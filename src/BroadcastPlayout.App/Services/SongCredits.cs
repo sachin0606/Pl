@@ -3,15 +3,6 @@ using BroadcastPlayout.Models;
 
 namespace BroadcastPlayout.Services;
 
-/// <summary>Everything the music Now/Next graphics show about one song. Immutable, safe to share across threads.</summary>
-public sealed record SongInfo(string Title, string Film, string Singer, string Lyrics, string Music, string Label, string FilePath, double DurationSeconds)
-{
-    public static readonly SongInfo Empty = new("", "", "", "", "", "", "", 0);
-
-    /// <summary>Trim IN point inside the file; previews start relative to it.</summary>
-    public double InPointSeconds { get; init; }
-}
-
 /// <summary>
 /// Resolves song credits for a playlist item. Each field is taken from the first source that has it:
 /// 1. the item's own fields (Item Properties → EPG METADATA → SONG CREDITS),
@@ -26,14 +17,15 @@ public static class SongCredits
     private static readonly object Gate = new();
     private static readonly Dictionary<string, (DateTime Stamp, Dictionary<string, string[]> Rows, string[] Header)> Folders = new(StringComparer.OrdinalIgnoreCase);
 
-    public static SongInfo Resolve(PlaylistItem item)
+    public static AiringInfo Resolve(PlaylistItem item, DateTime? start = null)
     {
-        var row = LookupCsv(item.FilePath);
-        var parts = SplitName(item.FilePath, item.Title);
+        var isLive = item.IsLiveSource;
+        var row = isLive ? null : LookupCsv(item.FilePath);
+        var parts = isLive ? default : SplitName(item.FilePath, item.Title);
         // "Untitled" is PlaylistItem's placeholder for an empty title, not a real song name.
         var typed = SplitName(null, string.Equals(item.Title, "Untitled", StringComparison.Ordinal) ? null : item.Title);
 
-        return new SongInfo(
+        return new AiringInfo(
             Title: First(Csv(row, "Title"), typed.Title, parts.Title),
             Film: First(item.Film, Csv(row, "Film"), Csv(row, "Album"), parts.Film),
             Singer: First(item.Singer, Csv(row, "Singer"), Csv(row, "Singers"), parts.Singer),
@@ -43,7 +35,12 @@ public static class SongCredits
             FilePath: item.FilePath ?? string.Empty,
             DurationSeconds: Math.Max(0, item.Duration.TotalSeconds))
         {
-            InPointSeconds = Math.Max(0, item.InPoint.TotalSeconds)
+            InPointSeconds = Math.Max(0, item.InPoint.TotalSeconds),
+            Kind = AiringInfo.KindForCategory(item.Category, isLive),
+            Start = start,
+            IsLive = isLive,
+            PosterPath = item.ThumbnailPath ?? string.Empty,
+            Request = item.Request
         };
     }
 

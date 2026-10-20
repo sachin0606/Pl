@@ -3,31 +3,31 @@ using BroadcastPlayout.Models;
 namespace BroadcastPlayout.Services;
 
 /// <summary>
-/// Factory versions of the two music package graphics. They are ordinary CG projects: they appear in
-/// the CG Designer, can be restyled there, and the playout uses the edited copy by name.
-/// Layout is 1920x1080, bottom-left above the ticker, as on typical Indian music channels.
+/// Factory versions of the two Now/Next graphics. They are ordinary CG projects: they appear in the
+/// CG Designer, can be restyled there, and the playout uses the edited copy by name.
+/// Layout is 1920x1080, bottom-left above the ticker, as on typical Indian entertainment channels.
 /// </summary>
-public static class MusicPackageTemplates
+public static class NowNextTemplates
 {
     private const string Font = "Bahnschrift";
 
     public static IEnumerable<CgProject> Create() => [CreateInfo(), CreateBox()];
 
-    /// <summary>Song title (grows upwards to two lines), rolling credits, and the song progress bar.</summary>
+    /// <summary>Title (grows upwards to two lines), rolling request/credit lines, and the progress bar.</summary>
     public static CgProject CreateInfo()
     {
-        var p = new CgProject { Id = new Guid("5a1d0c4e-7b1f-4d6a-9a51-6d0c2f1e0a01"), Name = MusicPackageSettings.DefaultInfoTemplate, Category = "Music", Width = 1920, Height = 1080, FrameRate = 50, DurationSeconds = 3 };
+        var p = new CgProject { Id = new Guid("5a1d0c4e-7b1f-4d6a-9a51-6d0c2f1e0a03"), Name = NowNextSettings.DefaultInfoTemplate, Category = "Now/Next", Width = 1920, Height = 1080, FrameRate = 50, DurationSeconds = 3 };
         Add(p, new CgLayer
         {
-            Name = "Song Title", Type = "Text", Text = "{NowTitle:upper}", X = 135, Y = 839, Width = 265, Height = 58,
-            FontFamily = Font, FontSize = 23, Bold = true, Fill = "#EBF2F2F2", VerticalTextAlignment = "Bottom",
+            Name = "Title", Type = "Text", Text = "{NowTitle:upper}", X = 135, Y = 847, Width = 285, Height = 50,
+            FontFamily = Font, FontSize = 20, Bold = true, Fill = "#EBF2F2F2", VerticalTextAlignment = "Bottom",
             ShadowEnabled = true, ShadowColor = "#99000000", ShadowOffsetX = 1.5, ShadowOffsetY = 1.5,
             AnimationIn = "Fade", AnimationOut = "Fade", AnimationInSeconds = .5, AnimationOutSeconds = .4
         });
         Add(p, new CgLayer
         {
             Name = "Credits", Type = "Credits", X = 135, Y = 897, Width = 640, Height = 48,
-            Text = "{NowFilm:upper}\nSinger : {NowSinger}\nLyrics : {NowLyrics}\nMusic : {NowMusic}\n{NowLabel:upper}",
+            Text = "{NowRequest}\n{NowSubtitle:upper}\nSinger : {NowSinger}\nLyrics : {NowLyrics}\nMusic : {NowMusic}\n{NowLabel:upper}",
             FontFamily = Font, FontSize = 19, Bold = true, Fill = "#D9E8E8E8", DataItemDurationSeconds = 3.5,
             ShadowEnabled = true, ShadowColor = "#99000000", ShadowOffsetX = 1.5, ShadowOffsetY = 1.5,
             AnimationIn = "Fade", AnimationOut = "Fade", AnimationInSeconds = .5, AnimationOutSeconds = .4
@@ -41,10 +41,10 @@ public static class MusicPackageTemplates
         return p;
     }
 
-    /// <summary>Blue 3D frame with the NEXT / LATER tag and the upcoming song playing inside.</summary>
+    /// <summary>Blue 3D frame with the NEXT / LATER tag, start time, the upcoming airing playing inside, and the viewer request.</summary>
     public static CgProject CreateBox()
     {
-        var p = new CgProject { Id = new Guid("5a1d0c4e-7b1f-4d6a-9a51-6d0c2f1e0a02"), Name = MusicPackageSettings.DefaultBoxTemplate, Category = "Music", Width = 1920, Height = 1080, FrameRate = 50, DurationSeconds = 2 };
+        var p = new CgProject { Id = new Guid("5a1d0c4e-7b1f-4d6a-9a51-6d0c2f1e0a04"), Name = NowNextSettings.DefaultBoxTemplate, Category = "Now/Next", Width = 1920, Height = 1080, FrameRate = 50, DurationSeconds = 2 };
         const string inAnim = "Slide Right";
         Add(p, new CgLayer
         {
@@ -60,7 +60,7 @@ public static class MusicPackageTemplates
         });
         Add(p, new CgLayer
         {
-            Name = "Tag Plate", Type = "Shape", ShapeKind = "Rectangle", X = 145, Y = 519, Width = 245, Height = 48,
+            Name = "Tag Plate", Type = "Shape", ShapeKind = "Rectangle", X = 145, Y = 519, Width = 330, Height = 48,
             UseGradient = true, Background = "#FF1E88E5", GradientColor2 = "#001E88E5", GradientAngle = 0,
             AnimationIn = "Wipe Left", AnimationOut = "Fade", AnimationInSeconds = .5, AnimationOutSeconds = .3
         });
@@ -68,6 +68,13 @@ public static class MusicPackageTemplates
         {
             Name = "Tag", Type = "Text", Text = "{BoxTag}", X = 152, Y = 519, Width = 230, Height = 48,
             FontFamily = Font, FontSize = 34, Bold = true, Fill = "#FFFFFFFF",
+            AnimationIn = "Fade", AnimationOut = "Fade", AnimationInSeconds = .5, AnimationOutSeconds = .3
+        });
+        Add(p, new CgLayer
+        {
+            Name = "When", Type = "Text", Text = "{BoxWhen}", X = 285, Y = 519, Width = 190, Height = 48,
+            FontFamily = Font, FontSize = 22, Bold = true, Fill = "#FFFFF59D",
+            ShadowEnabled = true, ShadowColor = "#80000000", ShadowOffsetX = 1, ShadowOffsetY = 1,
             AnimationIn = "Fade", AnimationOut = "Fade", AnimationInSeconds = .5, AnimationOutSeconds = .3
         });
         Add(p, new CgLayer
@@ -96,9 +103,16 @@ public static class MusicPackageTemplates
         });
         Add(p, new CgLayer
         {
-            Name = "Next Film", Type = "Text", Text = "{BoxFilm}", X = 156, Y = 742, Width = 305, Height = 26,
+            Name = "Next Subtitle", Type = "Text", Text = "{BoxSubtitle}", X = 156, Y = 742, Width = 305, Height = 26,
             FontFamily = Font, FontSize = 17, Bold = true, Fill = "#FFF2F2F2",
             ShadowEnabled = true, ShadowColor = "#B0000000", ShadowOffsetX = 1, ShadowOffsetY = 1,
+            AnimationIn = "Fade", AnimationOut = "Fade", AnimationInSeconds = .5, AnimationOutSeconds = .3
+        });
+        Add(p, new CgLayer
+        {
+            Name = "Request", Type = "Text", Text = "{BoxRequest}", X = 18, Y = 806, Width = 345, Height = 40,
+            FontFamily = Font, FontSize = 18, Bold = true, Fill = "#FFFFFFFF",
+            ShadowEnabled = true, ShadowColor = "#99003366", ShadowOffsetX = 1, ShadowOffsetY = 1,
             AnimationIn = "Fade", AnimationOut = "Fade", AnimationInSeconds = .5, AnimationOutSeconds = .3
         });
         return p;

@@ -1,0 +1,101 @@
+<Window x:Class="BroadcastPlayout.Views.ViewerRequestsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="VIEWER REQUESTS"
+        Width="1180" Height="720" MinWidth="980" MinHeight="560"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResize"
+        Background="{StaticResource Bg0Brush}" Foreground="{StaticResource TextBrush}" SnapsToDevicePixels="True">
+    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Background="{StaticResource Bg0Brush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="38"/>
+            </Grid.RowDefinitions>
+
+            <Border Background="#181122" BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="12,0,8,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="VIEWER REQUESTS · ON DEMAND" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ModeText, Mode=OneWay}" Foreground="#FFF59D" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <Button Grid.Column="2" Content="✕" Width="28" Height="24" Click="Close_Click" Background="Transparent" BorderThickness="0" Foreground="#FFFFFF" FontWeight="Bold"/>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" Margin="12">
+                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition Width="420"/></Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource PanelBorder}" Padding="8">
+                    <DataGrid x:Name="RequestsGrid" ItemsSource="{Binding Requests}" AutoGenerateColumns="False" IsReadOnly="True"
+                              HeadersVisibility="Column" SelectionMode="Single" RowHeight="28" SelectionChanged="RequestsGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="TIME" Binding="{Binding CreatedText, Mode=OneWay}" Width="90"/>
+                            <DataGridTextColumn Header="VIEWER" Binding="{Binding ViewerText, Mode=OneWay}" Width="150"/>
+                            <DataGridTextColumn Header="VIA" Binding="{Binding Source, Mode=OneWay}" Width="80"/>
+                            <DataGridTextColumn Header="REQUEST" Binding="{Binding RequestedTitle, Mode=OneWay}" Width="*"/>
+                            <DataGridTextColumn Header="MEDIA" Binding="{Binding MediaText, Mode=OneWay}" Width="170"/>
+                            <DataGridTextColumn Header="STATUS" Binding="{Binding StatusText, Mode=OneWay}" Width="140"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource PanelBorder}" Padding="14,10">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding FormTitle, Mode=OneWay}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="NEW REQUEST" Click="New_Click" Width="120" Height="26"/>
+                            </Grid>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="Viewer name" Style="{StaticResource SectionCaption}"/><TextBox x:Name="NameBox"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="City" Style="{StaticResource SectionCaption}"/><TextBox x:Name="CityBox"/></StackPanel>
+                            </Grid>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="Phone" Style="{StaticResource SectionCaption}"/><TextBox x:Name="PhoneBox"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="Via" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="SourceBox"/></StackPanel>
+                                <StackPanel Grid.Column="4"><TextBlock Text="Type" Style="{StaticResource SectionCaption}"/><ComboBox x:Name="KindBox"/></StackPanel>
+                            </Grid>
+                            <TextBlock Text="Requested song / movie / programme" Style="{StaticResource SectionCaption}" Margin="0,8,0,4"/>
+                            <TextBox x:Name="TitleBox"/>
+                            <TextBlock Text="Message / dedication" Style="{StaticResource SectionCaption}" Margin="0,8,0,4"/>
+                            <TextBox x:Name="DedicationBox" Height="48" AcceptsReturn="True" TextWrapping="Wrap"/>
+
+                            <TextBlock Text="MEDIA" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBox x:Name="MediaBox" IsReadOnly="True"/>
+                                <Button Grid.Column="1" Content="FIND" Click="Find_Click" Width="60" Height="26" Margin="6,0,0,0" ToolTip="Search the folders used by the playlist and the Channel Schedule"/>
+                                <Button Grid.Column="2" Content="BROWSE" Click="Browse_Click" Width="70" Height="26" Margin="6,0,0,0"/>
+                            </Grid>
+                            <ListBox x:Name="MatchesList" Height="96" Margin="0,6,0,0" SelectionChanged="MatchesList_SelectionChanged"/>
+
+                            <Button Content="SAVE REQUEST" Click="Save_Click" Height="30" Margin="0,10,0,0"/>
+
+                            <TextBlock Text="SCHEDULE" FontWeight="SemiBold" Margin="0,14,0,4"/>
+                            <Button Content="PLAY NEXT" Click="PlayNext_Click" Height="32" Background="#3E2359" BorderBrush="{StaticResource AccentBrush}" Foreground="#FFFFFF" FontWeight="Bold"
+                                    ToolTip="Right after the item on air (playlist, or a one-off schedule entry while the schedule drives the channel)"/>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition Width="80"/><ColumnDefinition Width="8"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                                <DatePicker x:Name="AtDatePicker" Height="28" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="2" x:Name="AtTimeBox" Text="20:00" VerticalAlignment="Center" ToolTip="HH:mm"/>
+                                <Button Grid.Column="4" Content="SCHEDULE AT" Click="ScheduleAt_Click" Height="28"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="REJECT" Click="Reject_Click" Width="90" Height="26" Margin="0,0,8,0"/>
+                                <Button Content="DELETE" Click="Delete_Click" Width="90" Height="26"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="2" Background="{StaticResource Bg1Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="14,0">
+                <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"
+                           Text="Scheduled requests show 'Requested by ...' in the Now / Next graphics. Status turns PLAYED when the item goes on air."/>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -350,12 +350,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var nextProg = Playlist.SkipWhile(x => x != CurrentItem).Skip(1).FirstOrDefault(x => !IsCommercialCategory(x.Category));
             return nextProg?.Title ?? NextItem?.Title ?? string.Empty;
         };
-        MusicPackageRuntime.IsLive = true;
-        MusicPackageRuntime.GetProgress = () => CurrentProgressPercent / 100.0;
-        _musicPackage = new MusicPackageRunner(
-            () => _settings.MusicPackage,
+        NowNextRuntime.IsLive = true;
+        NowNextRuntime.GetProgress = () => CurrentProgressPercent / 100.0;
+        PublishRequestFormat();
+        _nowNext = new NowNextRunner(
+            () => _settings.NowNext,
             () => _settings.ProfessionalBroadcast.NextItemVideo,
-            command => Ui(() => ApplyMusicPackageCommand(command)));
+            command => Ui(() => ApplyNowNextCommand(command)));
+        Playlist.CollectionChanged += (_, _) => QueueNowNextRefresh();
 
         try
         {
@@ -613,6 +615,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (value is not null)
             {
                 _manualStopRequested = false;
+                if (value.Request is { } request) MarkViewerRequestPlayed(request);
                 value.Status = "On Air";
                 _asRun.Start(ChannelId, value);
                 AddRecentEvent($"TAKE · {value.Title}");
@@ -752,39 +755,257 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    // ---- Music Now/Next package (song info + progress, NEXT / LATER video box) ---------------
+    // ---- Now/Next graphics (what is on air + what the schedule/playlist plays next) -------------
 
     // Created in the constructor; null only while earlier constructor code runs.
-    private readonly MusicPackageRunner? _musicPackage;
+    private readonly NowNextRunner? _nowNext;
+    private int _nowNextRefreshQueued;
 
-    /// <summary>Runs on the UI thread so the playlist is read safely; the runner only reacts to real changes.</summary>
-    private void RefreshMusicPackage()
+    /// <summary>
+    /// Coalesces refresh requests (item change, playlist edits, schedule reloads) into one UI-thread pass,
+    /// so loading a 1,000-item playlist costs one refresh, not a thousand.
+    /// </summary>
+    private void QueueNowNextRefresh()
     {
-        if (_musicPackage is null) return;
+        if (_nowNext is null || Interlocked.Exchange(ref _nowNextRefreshQueued, 1) == 1) return;
+        var dispatcher = WpfApplication.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.HasShutdownStarted) { Interlocked.Exchange(ref _nowNextRefreshQueued, 0); return; }
+        dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
+        {
+            Interlocked.Exchange(ref _nowNextRefreshQueued, 0);
+            if (Volatile.Read(ref _disposed) == 0) RefreshNowNext();
+        }));
+    }
+
+    /// <summary>
+    /// UI thread. NEXT / LATER come from whatever will really air: the Channel Schedule while its
+    /// automation runs, otherwise the playlist. The runner ignores calls that change nothing.
+    /// </summary>
+    private void RefreshNowNext()
+    {
+        if (_nowNext is null) return;
         var current = CurrentItem;
-        _musicPackage.Prepare(current, current is null ? null : NextItem, current is null ? null : UpNextItem);
+        if (current is null || !_settings.NowNext.Enabled)
+        {
+            _nowNext.Prepare(current, []);
+            return;
+        }
+        var upcoming = _scheduleRunner is { IsActive: true, OperatorOverride: false } schedule
+            ? schedule.Upcoming(2)
+            : PlaylistUpcoming(2);
+        _nowNext.Prepare(current, upcoming);
+    }
+
+    /// <summary>The next announceable playlist items with their expected start times (ads take airtime but are never announced).</summary>
+    private List<AiringInfo> PlaylistUpcoming(int count)
+    {
+        var current = CurrentItem;
+        var index = current is null ? -1 : Playlist.IndexOf(current);
+        var following = index >= 0 ? Playlist.Skip(index + 1)
+            : NextItem is { } next ? Playlist.Skip(Math.Max(0, Playlist.IndexOf(next)))
+            : [];
+        var remaining = current is null ? 0 : Math.Max(0, current.Duration.TotalSeconds - _currentElapsedSeconds);
+        var at = DateTime.Now.AddSeconds(remaining);
+        at = new DateTime(at.Ticks - at.Ticks % TimeSpan.TicksPerSecond);
+        var list = new List<AiringInfo>(count);
+        foreach (var item in following)
+        {
+            if (list.Count >= count) break;
+            if (IsEditorialForNowNext(item) && !NowNextSettings.IsAdvert(item.Category))
+                list.Add(SongCredits.Resolve(item, at));
+            at += item.Duration;
+        }
+        return list;
+    }
+
+    private void PublishRequestFormat()
+    {
+        var s = _settings.NowNext;
+        NowNextRuntime.Requests = new RequestFormat(s.ShowRequests, s.RequestPrefix ?? string.Empty, s.RequestShowName, s.RequestShowCity, s.RequestShowMessage);
     }
 
     /// <summary>Called by the settings window after a save.</summary>
-    public void ApplyMusicPackageSettings()
+    public void ApplyNowNextSettings()
     {
         PersistSettings();
-        _musicPackage?.Stop();
-        RefreshMusicPackage();
-        AddRecentEvent(_settings.MusicPackage.Enabled ? "MUSIC PACKAGE · ON" : "MUSIC PACKAGE · OFF");
+        PublishRequestFormat();
+        _nowNext?.Stop();
+        RefreshNowNext();
+        AddRecentEvent(_settings.NowNext.Enabled ? "NOW/NEXT GRAPHICS · ON" : "NOW/NEXT GRAPHICS · OFF");
     }
 
-    /// <summary>Package graphics use the same Program CG layer stack as the CG Controller and the schedule.</summary>
-    private void ApplyMusicPackageCommand(MusicPackageCommand command)
+    // ---- Viewer requests ("on demand") -----------------------------------------------------------
+
+    private bool _viewerRequestsLoaded;
+
+    /// <summary>This channel's requests, newest first. Loaded on first use.</summary>
+    public ObservableCollection<ViewerRequest> ViewerRequests
+    {
+        get
+        {
+            if (!_viewerRequestsLoaded)
+            {
+                _viewerRequestsLoaded = true;
+                foreach (var request in ViewerRequestStore.Load(ChannelId).OrderByDescending(r => r.CreatedAt)) _viewerRequests.Add(request);
+            }
+            return _viewerRequests;
+        }
+    }
+    private readonly ObservableCollection<ViewerRequest> _viewerRequests = [];
+
+    /// <summary>True when the Channel Schedule (not the playlist) decides what airs next.</summary>
+    public bool ScheduleIsDriving => _scheduleRunner is { IsActive: true, OperatorOverride: false };
+
+    public void SaveViewerRequests()
+    {
+        var kept = ViewerRequestStore.Trim(ViewerRequests);
+        foreach (var dropped in ViewerRequests.Except(kept).ToList()) ViewerRequests.Remove(dropped);
+        try { ViewerRequestStore.Save(ChannelId, kept); }
+        catch (Exception ex) { RuntimeDiagnosticsService.WriteException("VIEWER_REQUESTS_SAVE_ERROR", ex); }
+    }
+
+    public void AddViewerRequest(ViewerRequest request)
+    {
+        ViewerRequests.Insert(0, request);
+        SaveViewerRequests();
+        AddRecentEvent($"REQUEST · {request.ViewerText} · {request.RequestedTitle}");
+    }
+
+    public void SetViewerRequestStatus(ViewerRequest request, ViewerRequestStatus status)
+    {
+        request.Status = status;
+        SaveViewerRequests();
+    }
+
+    public void RemoveViewerRequest(ViewerRequest request)
+    {
+        ViewerRequests.Remove(request);
+        SaveViewerRequests();
+    }
+
+    /// <summary>
+    /// Airs the request right after the item on air. While the schedule drives the channel it becomes a
+    /// one-off schedule entry at the end of the current clip; otherwise it is inserted into the playlist.
+    /// Returns a message for the operator.
+    /// </summary>
+    public async Task<string> PlayViewerRequestNextAsync(ViewerRequest request)
+    {
+        if (!File.Exists(request.MediaPath)) return "Match the request to a media file first.";
+        try
+        {
+            if (ScheduleIsDriving)
+            {
+                var remaining = CurrentItem is null ? 0 : Math.Max(0, CurrentItem.Duration.TotalSeconds - _currentElapsedSeconds);
+                var at = DateTime.Now.AddSeconds(Math.Ceiling(remaining) + 1);
+                return await ScheduleViewerRequestAtAsync(request, at);
+            }
+            var current = CurrentItem;
+            var index = current is not null && Playlist.IndexOf(current) is var i and >= 0 ? i + 1
+                : SelectedItem is not null ? Playlist.IndexOf(SelectedItem) : Playlist.Count;
+            var item = await ImportMediaFileAsync(request.MediaPath, index);
+            item.Category = request.Category;
+            item.Request = request.ToTag();
+            request.ScheduledFor = null;
+            request.Status = ViewerRequestStatus.Scheduled;
+            SaveViewerRequests();
+            QueueNowNextRefresh();
+            AddRecentEvent($"REQUEST · PLAY NEXT · {request.ViewerText} · {item.Title}");
+            return $"Plays next: {item.Title}";
+        }
+        catch (Exception ex)
+        {
+            RuntimeDiagnosticsService.WriteException("VIEWER_REQUEST_SCHEDULE_ERROR", ex);
+            return "Could not schedule: " + ex.Message;
+        }
+    }
+
+    /// <summary>Airs the request at a set time through the Channel Schedule (a one-off entry); the playout reloads at once.</summary>
+    public async Task<string> ScheduleViewerRequestAtAsync(ViewerRequest request, DateTime at)
+    {
+        if (!File.Exists(request.MediaPath)) return "Match the request to a media file first.";
+        try
+        {
+            var seconds = await Task.Run(() => MediaProbe.Read(request.MediaPath).Duration.TotalSeconds);
+            var schedule = ChannelScheduleStore.Load(ChannelId);
+            ViewerRequestStore.AddToSchedule(schedule, request, at, seconds);
+            ChannelScheduleStore.Save(schedule);
+            request.ScheduledFor = at;
+            request.Status = ViewerRequestStatus.Scheduled;
+            SaveViewerRequests();
+            QueueNowNextRefresh();
+            AddRecentEvent($"REQUEST · SCHEDULED {at:HH:mm} · {request.ViewerText} · {request.RequestedTitle}");
+            return schedule.AutomationEnabled
+                ? $"Scheduled at {at:dd MMM HH:mm}."
+                : $"Saved in the Channel Schedule at {at:dd MMM HH:mm}, but SCHEDULE AUTOMATION is off for this channel, so it will not air until it is switched on.";
+        }
+        catch (Exception ex)
+        {
+            RuntimeDiagnosticsService.WriteException("VIEWER_REQUEST_SCHEDULE_ERROR", ex);
+            return "Could not schedule: " + ex.Message;
+        }
+    }
+
+    private void MarkViewerRequestPlayed(RequestTag tag)
+    {
+        var request = ViewerRequests.FirstOrDefault(r => r.Id == tag.RequestId);
+        if (request is null || request.Status == ViewerRequestStatus.Played) return;
+        request.Status = ViewerRequestStatus.Played;
+        request.PlayedAt = DateTime.Now;
+        SaveViewerRequests();
+        AddRecentEvent($"REQUEST · ON AIR · {request.ViewerText} · {request.RequestedTitle}");
+    }
+
+    /// <summary>
+    /// Media files whose name contains every word of <paramref name="query"/>, searched in the folders the
+    /// playlist and the Channel Schedule already use. Runs off the UI thread; bounded in files and results.
+    /// </summary>
+    public Task<IReadOnlyList<string>> FindMediaAsync(string query)
+    {
+        var words = (query ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in Playlist)
+            if (!string.IsNullOrWhiteSpace(item.FilePath) && !item.FilePath.Contains("://", StringComparison.Ordinal) && Path.GetDirectoryName(item.FilePath) is { Length: > 0 } dir)
+                folders.Add(dir);
+        foreach (var source in ChannelScheduleStore.Load(ChannelId).Items.SelectMany(x => x.Sources))
+        {
+            if (string.IsNullOrWhiteSpace(source) || source.Contains("://", StringComparison.Ordinal)) continue;
+            if (Directory.Exists(source)) folders.Add(source);
+            else if (Path.GetDirectoryName(source) is { Length: > 0 } dir) folders.Add(dir);
+        }
+        return Task.Run<IReadOnlyList<string>>(() =>
+        {
+            if (words.Length == 0) return [];
+            var found = new List<string>();
+            var scanned = 0;
+            foreach (var folder in folders)
+            {
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(folder))
+                    {
+                        if (++scanned > 20000 || found.Count >= 50) return found;
+                        if (!ScheduleSources.IsMediaFile(file)) continue;
+                        var name = Path.GetFileNameWithoutExtension(file);
+                        if (words.All(w => name.Contains(w, StringComparison.OrdinalIgnoreCase))) found.Add(file);
+                    }
+                }
+                catch { /* unreadable folder */ }
+            }
+            return found;
+        });
+    }
+
+    /// <summary>Now/Next graphics use the same Program CG layer stack as the CG Controller and the schedule.</summary>
+    private void ApplyNowNextCommand(NowNextCommand command)
     {
         CgProject? project = null;
         if (command.Play)
         {
             var template = CgProjects.FirstOrDefault(x => string.Equals(x.Name, command.TemplateName, StringComparison.OrdinalIgnoreCase))
-                ?? MusicPackageTemplates.Create().FirstOrDefault(x => string.Equals(x.Name, command.TemplateName, StringComparison.OrdinalIgnoreCase));
+                ?? NowNextTemplates.Create().FirstOrDefault(x => string.Equals(x.Name, command.TemplateName, StringComparison.OrdinalIgnoreCase));
             if (template is null)
             {
-                AddRecentEvent("MUSIC PACKAGE · TEMPLATE NOT FOUND · " + command.TemplateName);
+                AddRecentEvent("NOW/NEXT · TEMPLATE NOT FOUND · " + command.TemplateName);
                 return;
             }
             project = JsonSerializer.Deserialize<CgProject>(JsonSerializer.Serialize(template));
@@ -824,6 +1045,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Raise(nameof(ScheduleAutomationEnabled));
         Raise(nameof(ScheduleStatusText));
         Raise(nameof(ScheduleNextEventText));
+        // Schedule edits, reloads and automation on/off change what airs next: update the box live.
+        QueueNowNextRefresh();
     }
 
     /// <summary>True only in the playout process that runs this channel's schedule.</summary>
@@ -3110,17 +3333,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Raise(nameof(NowPlayingAutoText)); Raise(nameof(NextAutoText)); Raise(nameof(UpNextAutoText));
         Raise(nameof(NextDurationText));
         Raise(nameof(CurrentBlockRemainingText));
-        Ui(RefreshMusicPackage);
+        QueueNowNextRefresh();
     }
 
     private void EvaluateAutoCg(double elapsedSeconds)
     {
-        // The music package runs on its own switch; while it owns an item the classic
+        // Now/Next runs on its own switch; while it owns an item the classic
         // Now Playing / Coming Up lower thirds stay off so the two never overlap.
-        if (_musicPackage is { } musicPackage)
+        if (_nowNext is { } nowNext)
         {
-            musicPackage.Tick(CurrentItem, elapsedSeconds);
-            if (musicPackage.Handles(CurrentItem)) return;
+            nowNext.Tick(CurrentItem, elapsedSeconds);
+            if (nowNext.Handles(CurrentItem)) return;
         }
         if (!EnableAutoCg || CurrentItem is null || CurrentItem.IsCgEvent || CurrentItem.IsControlEvent) return;
         var current = CurrentItem;
@@ -5140,7 +5363,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try { _platformControlWatcher?.Dispose(); } catch { }
         try { _scheduler.Dispose(); } catch { }
         try { _scheduleRunner?.Dispose(); } catch { }
-        MusicPackageRuntime.GetProgress = null;
+        NowNextRuntime.GetProgress = null;
         _engine.VideoFrame -= OnVideo;
         _engine.AudioFrame -= OnAudio;
         _engine.AudioMeterFrame -= OnAudioMeter;

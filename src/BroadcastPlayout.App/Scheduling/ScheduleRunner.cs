@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using BroadcastPlayout.Engine;
 using BroadcastPlayout.Models;
+using BroadcastPlayout.Services;
 
 namespace BroadcastPlayout.Scheduling;
 
@@ -121,6 +122,48 @@ public sealed class ScheduleRunner : IPlayoutSequenceProvider, IDisposable
     }
 
     public ScheduleOccurrence? NextEvent { get { lock (_sync) return ScheduleResolver.NextEvent(_schedule, _clock()); } }
+
+    /// <summary>
+    /// What the schedule will air next (news, live, movies, programmes), soonest first, for the Now/Next
+    /// graphics. Empty while automation is off. The schedule is read under the lock; media lookups
+    /// (first file for the preview, credits) happen outside it.
+    /// </summary>
+    public IReadOnlyList<AiringInfo> Upcoming(int count)
+    {
+        IReadOnlyList<ScheduleOccurrence> next;
+        lock (_sync)
+        {
+            if (_disposed || !_schedule.AutomationEnabled) return [];
+            var now = _clock();
+            next = ScheduleResolver.Upcoming(_schedule, now, count, TimeSpan.FromHours(24),
+                o => _finished.ContainsKey(o.Key) || _manualCut.ContainsKey(o.Key));
+        }
+        return next.Select(Describe).ToList();
+    }
+
+    public static AiringInfo Describe(ScheduleOccurrence occurrence)
+    {
+        var item = occurrence.Item;
+        var isLive = item.Kind == ScheduleKind.Live;
+        var file = isLive ? string.Empty : ScheduleSources.Expand(item.Sources).FirstOrDefault()?.Path ?? string.Empty;
+        var category = ScheduleSources.CategoryOf(item);
+        var credits = file.Length > 0
+            ? SongCredits.Resolve(new PlaylistItem { FilePath = file, Title = item.Name, Category = category })
+            : AiringInfo.Empty;
+        var seconds = occurrence.End is { } end ? (end - occurrence.Start).TotalSeconds : item.PlannedDurationSeconds;
+        var kind = AiringInfo.KindForCategory(category, isLive);
+        return credits with
+        {
+            Title = item.Name,
+            FilePath = file,
+            DurationSeconds = Math.Max(0, seconds),
+            InPointSeconds = 0,
+            Kind = kind.Length > 0 ? kind : "PROGRAMME",
+            Start = occurrence.Start,
+            IsLive = isLive,
+            Request = item.Request
+        };
+    }
 
     // ---- Operator actions --------------------------------------------------------------------
 

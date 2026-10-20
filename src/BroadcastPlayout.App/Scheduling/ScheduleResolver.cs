@@ -160,6 +160,29 @@ public static class ScheduleResolver
         return next;
     }
 
+    /// <summary>
+    /// The next video airings that start after <paramref name="now"/> within <paramref name="horizon"/>,
+    /// soonest first: news, live, movies and programmes. Filler slots, spot ads and overlays are never
+    /// announced. Used for the Now/Next graphics.
+    /// </summary>
+    public static IReadOnlyList<ScheduleOccurrence> Upcoming(ChannelSchedule schedule, DateTime now, int count, TimeSpan horizon, Func<ScheduleOccurrence, bool>? isExcluded = null)
+    {
+        var until = now + horizon;
+        var found = new List<ScheduleOccurrence>();
+        foreach (var item in schedule.Items)
+        {
+            if (item.Kind is ScheduleKind.Filler or ScheduleKind.SpotAd || ScheduleRules.IsOverlay(item)) continue;
+            for (var date = now.Date; date <= until.Date; date = date.AddDays(1))
+            {
+                if (!item.OccursOn(date)) continue;
+                foreach (var occurrence in Occurrences(item, date))
+                    if (occurrence.Start > now && occurrence.Start <= until && isExcluded?.Invoke(occurrence) != true)
+                        found.Add(occurrence);
+            }
+        }
+        return found.OrderBy(x => x.Start).ThenByDescending(x => x.Priority).Take(Math.Max(0, count)).ToList();
+    }
+
     /// <summary>The daily window of an overlay item (bottom-ad loop, L-shape interval). No end time = to midnight.</summary>
     public static (DateTime Start, DateTime End)? DailyWindow(ChannelScheduleItem item, DateTime date)
     {

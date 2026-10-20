@@ -545,7 +545,7 @@ public sealed class CgCompositor : IDisposable
                 if (!forceNormalBlend && UsesCustomBlend(visualLayer)) DrawBlendedMedia(g, targetBytes, targetWidth, targetHeight, targetStride, visualLayer.BlendMode, og => DrawVideo(og, rect, visualLayer, t - visualLayer.StartSeconds, opacity));
                 else DrawVideo(g, rect, visualLayer, t - visualLayer.StartSeconds, opacity);
                 break;
-            // Music Now/Next package elements (data from MusicPackageRuntime).
+            // Now/Next package elements (data from NowNextRuntime).
             case "PROGRESS": DrawProgress(g, rect, visualLayer, continuousSeconds, opacity); break;
             case "CREDITS": DrawCredits(g, rect, visualLayer, continuousSeconds, opacity, sy); break;
             case "UPNEXTVIDEO": DrawUpNextVideo(g, rect, visualLayer, opacity); break;
@@ -2383,7 +2383,7 @@ public sealed class CgCompositor : IDisposable
     /// </summary>
     private static void DrawProgress(Graphics g, RectangleF rect, CgLayer layer, double timelineSeconds, double opacity)
     {
-        var progress = (float)MusicPackageRuntime.Progress(timelineSeconds);
+        var progress = (float)NowNextRuntime.Progress(timelineSeconds);
         var track = Math.Max(1.5f, rect.Height * .16f);
         var middle = rect.Top + rect.Height / 2f;
         using (var trackBrush = new SolidBrush(ParseColor(layer.Fill, opacity)))
@@ -2400,7 +2400,7 @@ public sealed class CgCompositor : IDisposable
         }
     }
 
-    private readonly Dictionary<Guid, (SongInfo Song, UpNextBoxState? Box, string Template, List<string> Lines)> _creditLines = [];
+    private readonly Dictionary<Guid, (AiringInfo Now, UpNextBoxState? Box, RequestFormat Requests, string Template, List<string> Lines)> _creditLines = [];
 
     /// <summary>
     /// Credit lines that roll up one line at a time, as many as fit the layer height (two in the package).
@@ -2409,13 +2409,15 @@ public sealed class CgCompositor : IDisposable
     /// </summary>
     private void DrawCredits(Graphics g, RectangleF rect, CgLayer layer, double timelineSeconds, double opacity, double sy)
     {
-        var song = MusicPackageRuntime.Now;
-        var box = MusicPackageRuntime.Box;
+        var now = NowNextRuntime.Now;
+        var box = NowNextRuntime.Box;
+        var requests = NowNextRuntime.Requests;
         var template = layer.Text ?? string.Empty;
-        if (!_creditLines.TryGetValue(layer.Id, out var cached) || !ReferenceEquals(cached.Song, song) || !ReferenceEquals(cached.Box, box) || !string.Equals(cached.Template, template, StringComparison.Ordinal))
+        if (!_creditLines.TryGetValue(layer.Id, out var cached) || !ReferenceEquals(cached.Now, now) || !ReferenceEquals(cached.Box, box)
+            || !ReferenceEquals(cached.Requests, requests) || !string.Equals(cached.Template, template, StringComparison.Ordinal))
         {
             if (_creditLines.Count > 64) _creditLines.Clear();
-            cached = (song, box, template, MusicPackageRuntime.CreditLines(template));
+            cached = (now, box, requests, template, NowNextRuntime.CreditLines(template));
             _creditLines[layer.Id] = cached;
         }
         var lines = cached.Lines;
@@ -2468,18 +2470,25 @@ public sealed class CgCompositor : IDisposable
     private long _lastPreviewSweep;
 
     /// <summary>
-    /// The NEXT / LATER video window. Plays the box song (MusicPackageRuntime.Box) muted, from its preview
-    /// start point, decoded at about the window size on a background worker. Background colour shows until
-    /// the first frame arrives. Without playout data the layer's own Source file is used (designer preview).
+    /// The NEXT / LATER window. Plays the upcoming airing (NowNextRuntime.Box) muted, from its preview start
+    /// point, decoded at about the window size on a background worker. Background colour shows until the
+    /// first frame arrives. Live feeds, items without a file, or video switched off get a title card
+    /// (poster, or the type in large letters). Without playout data the layer's Source file is used.
     /// </summary>
     private void DrawUpNextVideo(Graphics g, RectangleF rect, CgLayer layer, double opacity)
     {
         using (var fill = new SolidBrush(ParseColor(layer.Background, opacity)))
             if (fill.Color.A > 0) g.FillRectangle(fill, rect);
 
-        var box = MusicPackageRuntime.Box;
-        var path = !string.IsNullOrWhiteSpace(box?.Song.FilePath) ? box.Song.FilePath : layer.Source;
+        var box = NowNextRuntime.Box;
+        var info = box?.Info;
+        var path = !string.IsNullOrWhiteSpace(info?.FilePath) ? info.FilePath : layer.Source;
         var start = box?.PreviewStartSeconds ?? 0;
+        if (info is not null && (info.IsLive || !box!.ShowVideo || string.IsNullOrWhiteSpace(info.FilePath)))
+        {
+            DrawTitleCard(g, rect, layer, info, opacity);
+            return;
+        }
         if (string.IsNullOrWhiteSpace(path) || path.Contains("://", StringComparison.Ordinal)) return;
 
         var now = Environment.TickCount64;
@@ -2509,6 +2518,46 @@ public sealed class CgCompositor : IDisposable
             g.DrawImage(bitmap, Rectangle.Round(rect), crop.X, crop.Y, crop.Width, crop.Height, GraphicsUnit.Pixel, attrs);
         }
         finally { handle.Free(); }
+    }
+
+    // One poster at a time: replaced (and disposed) when the box shows another airing, so a channel
+    // with hundreds of movie posters never keeps more than one in memory.
+    private (string Path, Image? Image) _poster = (string.Empty, null);
+
+    /// <summary>Box content without video: the poster when there is one, else the type ("LIVE", "NEWS") in large letters.</summary>
+    private void DrawTitleCard(Graphics g, RectangleF rect, CgLayer layer, AiringInfo info, double opacity)
+    {
+        if (!string.IsNullOrWhiteSpace(info.PosterPath))
+        {
+            if (!string.Equals(_poster.Path, info.PosterPath, StringComparison.OrdinalIgnoreCase))
+            {
+                _poster.Image?.Dispose();
+                Image? loaded = null;
+                try
+                {
+                    if (File.Exists(info.PosterPath))
+                    {
+                        using var file = Image.FromFile(info.PosterPath);
+                        loaded = new Bitmap(file, (int)Math.Max(16, rect.Width), (int)Math.Max(16, rect.Height));
+                    }
+                }
+                catch { loaded = null; }
+                _poster = (info.PosterPath, loaded);
+            }
+            if (_poster.Image is { } poster)
+            {
+                using var attrs = new ImageAttributes();
+                attrs.SetColorMatrix(new ColorMatrix { Matrix33 = (float)Math.Clamp(opacity, 0, 1) });
+                g.DrawImage(poster, Rectangle.Round(rect), 0, 0, poster.Width, poster.Height, GraphicsUnit.Pixel, attrs);
+                return;
+            }
+        }
+        var label = string.IsNullOrWhiteSpace(info.Kind) ? "COMING UP" : info.Kind;
+        using var font = CreateFont(layer.FontFamily, Math.Max(12f, rect.Height * .24f), FontStyle.Bold);
+        using var brush = new SolidBrush(ParseColor("#E6FFFFFF", opacity));
+        using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        // Upper part of the window; the caption shade and title sit in the lower part.
+        g.DrawString(label, font, brush, new RectangleF(rect.X, rect.Y, rect.Width, rect.Height * .62f), format);
     }
 
     /// <summary>Closes preview decoders whose window has not been drawn for a moment (box went off air).</summary>
@@ -2690,6 +2739,8 @@ public sealed class CgCompositor : IDisposable
         _videoLayers.Clear();
         foreach (var entry in _previews.Values) entry.Source.Dispose();
         _previews.Clear();
+        _poster.Image?.Dispose();
+        _poster = (string.Empty, null);
     }
 
     private sealed class VideoLayerState : IDisposable

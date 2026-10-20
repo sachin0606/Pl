@@ -106,6 +106,10 @@ public sealed class ChannelScheduleItem : ObservableObject
     public int RepeatMinutes { get; set; } = 15;
     /// <summary>Programme title or category text that triggers an L-shape.</summary>
     public string ProgrammeMatch { get; set; } = string.Empty;
+    /// <summary>Playlist category for the items it plays (e.g. "Music" for a requested song). Empty = from the kind.</summary>
+    public string Category { get; set; } = string.Empty;
+    /// <summary>Set when this airing was scheduled for a viewer request; copied to the items it plays.</summary>
+    public BroadcastPlayout.Models.RequestTag? Request { get; set; }
 
     [JsonIgnore] public string KindText => ScheduleRules.KindLabel(Kind);
     [JsonIgnore] public string DaysText => Days == ScheduleDays.All ? "Every day" : Days.ToString().Replace(", ", " ");
