@@ -41,6 +41,8 @@ public static class ChromiumCgRuntime
                     BackgroundColor = Cef.ColorSetARGB(0, 0, 0, 0),
                     LogSeverity = LogSeverity.Warning
                 };
+                // Installed (self-contained) suite: Kashtrix.Playout.exe is the Chromium helper.
+                if (ChromiumSubprocessHost.HelperPath() is { } helper) settings.BrowserSubprocessPath = helper;
                 settings.CefCommandLineArgs["autoplay-policy"] = "no-user-gesture-required";
                 settings.CefCommandLineArgs["disable-background-timer-throttling"] = "1";
                 settings.CefCommandLineArgs["disable-renderer-backgrounding"] = "1";
